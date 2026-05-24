@@ -1,404 +1,227 @@
-const insights = [
-  {
-    title: "Overtrading Detected",
-    description:
-      "You opened 42% more trades this week compared to your average behavior.",
-    type: "Warning",
-  },
+import React from "react";
 
-  {
-    title: "Best Performance Hours",
-    description:
-      "Your highest win rate occurs between 9 AM and 12 PM market session.",
-    type: "Positive",
-  },
+import { motion } from "framer-motion";
 
-  {
-    title: "Risk Management Improved",
-    description:
-      "Average stop loss discipline improved by 18% this month.",
-    type: "Positive",
-  },
+import AIInsightsHeader
+  from "@/components/ai-insights/AIInsightsHeader";
 
-  {
-    title: "Emotional Trading Spike",
-    description:
-      "Losses increased after revenge-trading behavior on losing streaks.",
-    type: "Risk",
-  },
-];
+import AIStatCard
+  from "@/components/ai-insights/AIStatCard";
 
-export default function AIInsights() {
+import InsightCard
+  from "@/components/ai-insights/InsightCard";
+
+import SuggestedImprovementCard
+  from "@/components/ai-insights/SuggestedImprovementCard";
+
+import AISummaryCard
+  from "@/components/ai-insights/AISummaryCard";
+
+import AIInsightsSkeleton
+  from "@/components/skeletons/AIInsightsSkeleton";
+
+import GlassPanel
+  from "@/components/ui/GlassPanel";
+
+import {
+  Brain,
+  ShieldCheck,
+  AlertTriangle,
+} from "lucide-react";
+
+import {
+  useAIInsights,
+} from "@/hooks/useAIInsights";
+
+import {
+  pageTransition,
+} from "@/animations/page";
+
+import {
+  staggerContainer,
+  staggerItem,
+} from "@/animations/stagger";
+
+function AIInsights() {
+
+  const {
+    insights,
+    loading,
+  } = useAIInsights();
+
+  /* Loading */
+  if (loading) {
+
+    return (
+      <AIInsightsSkeleton />
+    );
+  }
+
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent:
-            "space-between",
-          alignItems: "center",
-        }}
+
+    <motion.div
+
+      variants={pageTransition}
+
+      initial="initial"
+
+      animate="animate"
+
+      exit="exit"
+
+      className="space-y-6"
+    >
+
+      {/* Header */}
+      <motion.div
+        variants={staggerItem}
+        initial="hidden"
+        animate="show"
       >
-        <div>
-          <h1 className="page-title">
-            AI Insights
-          </h1>
 
-          <p className="page-subtitle">
-            AI-powered trading behavior analysis
-          </p>
-        </div>
+        <AIInsightsHeader />
 
-        <button
-          style={{
-            height: "42px",
-            padding: "0 18px",
-            borderRadius: "12px",
-            border: "none",
-            background:
-              "linear-gradient(135deg,#2563EB,#3B82F6)",
-            color: "white",
-            fontWeight: "600",
-            cursor: "pointer",
-            fontSize: "13px",
-          }}
-        >
-          Generate Report
-        </button>
-      </div>
+      </motion.div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(3,1fr)",
-          gap: "12px",
-          marginTop: "18px",
-        }}
+      {/* Top Stats */}
+      <motion.section
+
+        variants={staggerContainer}
+
+        initial="hidden"
+
+        animate="show"
+
+        className="grid grid-cols-1 gap-4 md:grid-cols-3"
       >
-        <div
-          className="panel"
-          style={{
-            padding: "18px",
-          }}
-        >
-          <p className="metric-title">
-            AI CONFIDENCE
-          </p>
 
-          <h2
-            style={{
-              marginTop: "12px",
-              fontSize: "32px",
-              fontWeight: "700",
-            }}
-          >
-            92%
-          </h2>
+        <AIStatCard
+          title="AI CONFIDENCE"
+          value="92%"
+          description="High prediction accuracy"
+          icon={Brain}
+          green
+        />
 
-          <p
-            className="success"
-            style={{
-              marginTop: "6px",
-              fontSize: "12px",
-            }}
-          >
-            High prediction accuracy
-          </p>
-        </div>
+        <AIStatCard
+          title="DISCIPLINE SCORE"
+          value="75"
+          description="Stable execution behavior"
+          icon={ShieldCheck}
+        />
 
-        <div
-          className="panel"
-          style={{
-            padding: "18px",
-          }}
-        >
-          <p className="metric-title">
-            DISCIPLINE SCORE
-          </p>
+        <AIStatCard
+          title="RISK LEVEL"
+          value="Medium"
+          description="Monitor emotional entries"
+          icon={AlertTriangle}
+          warning
+        />
 
-          <h2
-            style={{
-              marginTop: "12px",
-              fontSize: "32px",
-              fontWeight: "700",
-            }}
-          >
-            75
-          </h2>
+      </motion.section>
 
-          <p
-            className="secondary-text"
-            style={{
-              marginTop: "6px",
-              fontSize: "12px",
-            }}
-          >
-            Stable execution behavior
-          </p>
-        </div>
+      {/* Main Analysis */}
+      <motion.section
 
-        <div
-          className="panel"
-          style={{
-            padding: "18px",
-          }}
-        >
-          <p className="metric-title">
-            RISK LEVEL
-          </p>
+        variants={staggerItem}
 
-          <h2
-            style={{
-              marginTop: "12px",
-              fontSize: "32px",
-              fontWeight: "700",
-              color: "#FACC15",
-            }}
-          >
-            Medium
-          </h2>
+        initial="hidden"
 
-          <p
-            className="secondary-text"
-            style={{
-              marginTop: "6px",
-              fontSize: "12px",
-            }}
-          >
-            Monitor emotional entries
-          </p>
-        </div>
-      </div>
-
-      <div
-        className="panel"
-        style={{
-          marginTop: "12px",
-          padding: "18px",
-        }}
+        animate="show"
       >
-        <div
-          style={{
-            marginBottom: "18px",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "15px",
-              fontWeight: "600",
-            }}
-          >
-            AI Trading Analysis
-          </h3>
 
-          <p
-            className="secondary-text"
-            style={{
-              marginTop: "3px",
-              fontSize: "11px",
-            }}
-          >
-            Machine learning behavioral insights
-          </p>
-        </div>
+        <GlassPanel className="p-6">
 
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
-          }}
-        >
-          {insights.map(
-            (insight, index) => (
-              <div
-                key={index}
-                style={{
-                  background: "#0F172A",
-                  borderRadius: "14px",
-                  padding: "18px",
-                  border:
-                    "1px solid rgba(255,255,255,0.02)",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent:
-                      "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <h3
-                    style={{
-                      fontSize: "14px",
-                      fontWeight: "600",
-                    }}
-                  >
-                    {insight.title}
-                  </h3>
+          <div className="mb-6">
 
-                  <span
-                    style={{
-                      padding:
-                        "6px 10px",
-                      borderRadius:
-                        "999px",
-                      fontSize: "11px",
-                      fontWeight: "600",
-                      background:
-                        insight.type ===
-                        "Positive"
-                          ? "rgba(34,197,94,0.12)"
-                          : insight.type ===
-                            "Warning"
-                          ? "rgba(250,204,21,0.12)"
-                          : "rgba(239,68,68,0.12)",
-                      color:
-                        insight.type ===
-                        "Positive"
-                          ? "#22C55E"
-                          : insight.type ===
-                            "Warning"
-                          ? "#FACC15"
-                          : "#EF4444",
-                    }}
-                  >
-                    {insight.type}
-                  </span>
-                </div>
+            <h2 className="text-xl font-bold text-white">
 
-                <p
-                  className="secondary-text"
-                  style={{
-                    marginTop: "12px",
-                    lineHeight: "1.7",
-                    fontSize: "12px",
-                  }}
-                >
-                  {insight.description}
-                </p>
-              </div>
-            )
-          )}
-        </div>
-      </div>
+              AI Trading Analysis
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "1fr 1fr",
-          gap: "12px",
-          marginTop: "12px",
-        }}
-      >
-        <div
-          className="panel"
-          style={{
-            padding: "18px",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "15px",
-              fontWeight: "600",
-            }}
-          >
-            Suggested Improvements
-          </h3>
+            </h2>
 
-          <div
-            style={{
-              marginTop: "18px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px",
-            }}
-          >
-            <div
-              style={{
-                background: "#0F172A",
-                borderRadius: "12px",
-                padding: "14px",
-              }}
-            >
-              <p
-                style={{
-                  fontSize: "13px",
-                }}
-              >
-                Reduce overtrading after 3 consecutive wins.
-              </p>
-            </div>
+            <p className="mt-1 text-sm text-zinc-500">
 
-            <div
-              style={{
-                background: "#0F172A",
-                borderRadius: "12px",
-                padding: "14px",
-              }}
-            >
-              <p
-                style={{
-                  fontSize: "13px",
-                }}
-              >
-                Focus more on breakout setups during London session.
-              </p>
-            </div>
+              Machine learning behavioral insights
 
-            <div
-              style={{
-                background: "#0F172A",
-                borderRadius: "12px",
-                padding: "14px",
-              }}
-            >
-              <p
-                style={{
-                  fontSize: "13px",
-                }}
-              >
-                Avoid revenge entries after 2 losses in a row.
-              </p>
-            </div>
+            </p>
+
           </div>
-        </div>
 
-        <div
-          className="panel"
-          style={{
-            padding: "18px",
-          }}
+          <motion.div
+
+            variants={staggerContainer}
+
+            initial="hidden"
+
+            animate="show"
+
+            className="space-y-4"
+          >
+
+            {insights.map(
+              (
+                insight,
+                index
+              ) => (
+
+                <motion.div
+                  key={index}
+                  variants={staggerItem}
+                >
+
+                  <InsightCard
+                    insight={insight}
+                  />
+
+                </motion.div>
+              )
+            )}
+
+          </motion.div>
+
+        </GlassPanel>
+
+      </motion.section>
+
+      {/* Bottom Grid */}
+      <motion.section
+
+        variants={staggerContainer}
+
+        initial="hidden"
+
+        animate="show"
+
+        transition={{
+          delayChildren: 0.1,
+        }}
+
+        className="grid grid-cols-1 gap-4 xl:grid-cols-2"
+      >
+
+        <motion.div
+          variants={staggerItem}
         >
-          <h3
-            style={{
-              fontSize: "15px",
-              fontWeight: "600",
-            }}
-          >
-            AI Summary
-          </h3>
 
-          <div
-            style={{
-              marginTop: "18px",
-              background: "#0F172A",
-              borderRadius: "14px",
-              padding: "18px",
-              lineHeight: "1.9",
-              color: "#CBD5E1",
-              fontSize: "13px",
-            }}
-          >
-            Your trading behavior shows strong consistency during structured market sessions.
-            Performance decreases significantly during emotional re-entries and high-frequency trading periods.
-            Current data suggests maintaining lower exposure after consecutive losses can improve long-term profitability.
-          </div>
-        </div>
-      </div>
-    </div>
+          <SuggestedImprovementCard />
+
+        </motion.div>
+
+        <motion.div
+          variants={staggerItem}
+        >
+
+          <AISummaryCard />
+
+        </motion.div>
+
+      </motion.section>
+
+    </motion.div>
   );
 }
+
+export default React.memo(
+  AIInsights
+);
