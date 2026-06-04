@@ -272,16 +272,16 @@ export default function AuthLayout({ children }) {
 
       setLivePrices((prev) =>
         prev.map((p) => {
-          const delta = (Math.random() - 0.5) * 0.6;
+          const delta = (Math.random() - 0.5) * 0.2;
           const newChange = (parseFloat(p.change) + delta).toFixed(2);
           let side = p.side;
-          if (Math.random() < 0.03) {
+          if (Math.random() < 0.01) {
             side = side === "buy" ? "sell" : "buy";
           }
           return { ...p, change: newChange, side, id: Math.random() };
         })
       );
-    }, 2200);
+    }, 3500);
 
     return () => clearInterval(intervalRef.current);
   }, []);
@@ -509,7 +509,7 @@ export default function AuthLayout({ children }) {
         >
           <div
             className="flex h-full w-max items-center"
-            style={{ animation: "ticker-scroll 30s linear infinite" }}
+            style={{ animation: "ticker-scroll 60s linear infinite" }}
           >
             <div className="flex items-center">{tickerTape}</div>
             <div className="flex items-center">{tickerTape}</div>
