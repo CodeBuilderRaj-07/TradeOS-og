@@ -18,9 +18,11 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
-    public SecurityConfig(JwtFilter jwtFilter) {
+    public SecurityConfig(JwtFilter jwtFilter, OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler) {
         this.jwtFilter = jwtFilter;
+        this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
     }
 
     @Bean
@@ -55,13 +57,15 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/",
-                                "/api/auth/login",
-                                "/api/auth/register",
-                                "/api/auth/forgot-password",
-                                "/api/auth/reset-password",
-                                "/api/health"
+                                "/api/auth/**",
+                                "/api/health",
+                                "/oauth2/**",
+                                "/login/oauth2/**"
                         ).permitAll()
                         .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2LoginSuccessHandler)
                 )
                 .addFilterBefore(
                         jwtFilter,

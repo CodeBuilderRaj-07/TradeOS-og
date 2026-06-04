@@ -22,6 +22,10 @@ public class User {
 
     private String resetToken;
 
+    private String authProvider;
+
+    private String providerId;
+
     public Long getId() {
         return id;
     }
@@ -76,5 +80,21 @@ public class User {
 
     public void setResetToken(String resetToken) {
         this.resetToken = resetToken;
+    }
+
+    public String getAuthProvider() {
+        return authProvider;
+    }
+
+    public void setAuthProvider(String authProvider) {
+        this.authProvider = authProvider;
+    }
+
+    public String getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(String providerId) {
+        this.providerId = providerId;
     }
 }

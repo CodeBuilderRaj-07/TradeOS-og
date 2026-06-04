@@ -36,6 +36,7 @@ const AlgoBuilder = lazy(() => import("@/pages/AlgoBuilder"));
 const CreateTrade = lazy(() => import("@/pages/CreateTrade"));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
+const OAuthCallback = lazy(() => import("@/pages/OAuthCallback"));
 
 const pageVariants = {
   initial: { opacity: 0, scale: 0.97, y: 16, filter: "blur(4px)" },
@@ -241,6 +242,7 @@ function AnimatedRoutes() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/oauth/callback" element={<OAuthCallback />} />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
