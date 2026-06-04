@@ -17,16 +17,16 @@ const tickers = [
 
 function generateCandle(i) {
   const dir = i % 3 === 0 ? "down" : "up";
-  const bodyRange = 25 + ((i * 7) % 55);
-  const wickExtra = 12 + ((i * 3) % 28);
-  const baseBottom = 10 + ((i * 11) % 45);
+  const bodyRange = 28 + ((i * 7) % 50);
+  const wickExtra = 14 + ((i * 3) % 26);
+  const baseBottom = 12 + ((i * 11) % 42);
   return {
     left: `${(i * 6.8) + 1.2}%`,
-    width: 5 + (i % 3) * 3,
+    width: 6 + (i % 3) * 3,
     bodyH: bodyRange,
     bodyBottom: baseBottom,
     wickHigh: bodyRange + wickExtra,
-    wickLow: 8 + ((i * 5) % 20),
+    wickLow: 10 + ((i * 5) % 18),
     dir,
   };
 }
@@ -34,8 +34,8 @@ function generateCandle(i) {
 function Candle({ candle, delay }) {
   const isUp = candle.dir === "up";
   const color = isUp
-    ? "hsla(142, 71%, 50%, 0.40)"
-    : "hsla(0, 72%, 55%, 0.35)";
+    ? "hsla(152, 75%, 50%, 0.40)"
+    : "hsla(0, 75%, 55%, 0.35)";
   const glowColor = isUp
     ? "rgba(52, 211, 153, 0.15)"
     : "rgba(248, 113, 113, 0.12)";
@@ -48,7 +48,7 @@ function Candle({ candle, delay }) {
           background: color,
           bottom: candle.bodyBottom,
           height: candle.wickHigh,
-          transition: "height 2s cubic-bezier(0.22, 1, 0.36, 1), bottom 2s cubic-bezier(0.22, 1, 0.36, 1)",
+          transition: "height 2.2s cubic-bezier(0.22, 1, 0.36, 1), bottom 2.2s cubic-bezier(0.22, 1, 0.36, 1)",
         }}
       />
       <div
@@ -57,7 +57,7 @@ function Candle({ candle, delay }) {
           background: color,
           bottom: Math.max(0, candle.bodyBottom - candle.wickLow),
           height: candle.wickLow,
-          transition: "height 2s cubic-bezier(0.22, 1, 0.36, 1), bottom 2s cubic-bezier(0.22, 1, 0.36, 1)",
+          transition: "height 2.2s cubic-bezier(0.22, 1, 0.36, 1), bottom 2.2s cubic-bezier(0.22, 1, 0.36, 1)",
         }}
       />
       <div
@@ -65,11 +65,11 @@ function Candle({ candle, delay }) {
         style={{
           width: candle.width,
           background: `linear-gradient(180deg, ${color}, ${glowColor})`,
-          boxShadow: `0 0 16px ${glowColor}, 0 0 32px ${glowColor}`,
+          boxShadow: `0 0 18px ${glowColor}, 0 0 36px ${glowColor}`,
           bottom: candle.bodyBottom,
           height: candle.bodyH,
           transform: "translateZ(0)",
-          transition: "height 2s cubic-bezier(0.22, 1, 0.36, 1), bottom 2s cubic-bezier(0.22, 1, 0.36, 1), background 1.2s ease, box-shadow 1.2s ease",
+          transition: "height 2.2s cubic-bezier(0.22, 1, 0.36, 1), bottom 2.2s cubic-bezier(0.22, 1, 0.36, 1), background 1.2s ease, box-shadow 1.2s ease",
           animation: `candle-flicker ${3 + (delay % 3)}s ease-in-out ${delay * 0.4}s infinite`,
         }}
       />
@@ -95,11 +95,11 @@ function LivePriceLabel({ value, isUp }) {
       className={`transition-colors duration-300 ${
         flash
           ? isUp
-            ? "text-success/80"
-            : "text-destructive/80"
+            ? "text-emerald-400/90"
+            : "text-red-400/90"
           : isUp
-            ? "text-success/60"
-            : "text-destructive/60"
+            ? "text-emerald-400/60"
+            : "text-red-400/60"
       }`}
     >
       {isUp ? "▲" : "▼"} {value}%
@@ -107,32 +107,123 @@ function LivePriceLabel({ value, isUp }) {
   );
 }
 
-const PARTICLES = 40;
 function ParticleField() {
   const particles = useMemo(() =>
-    Array.from({ length: PARTICLES }, (_, i) => ({
+    Array.from({ length: 80 }, () => ({
       left: `${Math.random() * 100}%`,
-      size: 1 + Math.random() * 2,
-      delay: Math.random() * 8,
-      duration: 8 + Math.random() * 12,
-      opacity: 0.15 + Math.random() * 0.25,
+      size: 1 + Math.random() * 2.5,
+      delay: Math.random() * 10,
+      duration: 10 + Math.random() * 20,
+      opacity: 0.1 + Math.random() * 0.3,
+      drift: (Math.random() - 0.5) * 40,
     })),
   []);
   return particles.map((p, i) => (
     <div
       key={i}
-      className="absolute rounded-full bg-foreground"
+      className="absolute rounded-full"
       style={{
         left: p.left,
         bottom: "-4px",
         width: p.size,
         height: p.size,
         opacity: p.opacity,
+        background: i % 5 === 0 ? "rgba(147, 197, 253, 0.6)" : "rgba(255, 255, 255, 0.4)",
+        boxShadow: i % 5 === 0 ? "0 0 4px rgba(147, 197, 253, 0.4)" : "none",
         animation: `particle-rise ${p.duration}s linear ${p.delay}s infinite`,
         willChange: "transform, opacity",
       }}
     />
   ));
+}
+
+function GridDots() {
+  const rows = [20, 35, 50, 65, 80];
+  const cols = [15, 30, 50, 70, 85];
+  return rows.map((r) =>
+    cols.map((c) => (
+      <div
+        key={`${r}-${c}`}
+        className="absolute rounded-full"
+        style={{
+          left: `${c}%`,
+          top: `${r}%`,
+          width: 2,
+          height: 2,
+          background: "rgba(255, 255, 255, 0.06)",
+          boxShadow: "0 0 4px rgba(59, 130, 246, 0.08)",
+        }}
+      />
+    ))
+  );
+}
+
+function ChartLine() {
+  const pathRef = useRef(null);
+  const points = useMemo(() => {
+    const pts = [];
+    for (let i = 0; i <= 100; i++) {
+      const x = (i / 100) * 100;
+      const y = 55 + Math.sin(i * 0.15) * 18 + Math.sin(i * 0.08) * 10 + Math.cos(i * 0.04) * 8;
+      pts.push({ x, y });
+    }
+    return pts;
+  }, []);
+
+  const pathD = useMemo(() => {
+    return points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+  }, [points]);
+
+  const fillPath = useMemo(() => {
+    const top = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+    return `${top} L 100 80 L 0 80 Z`;
+  }, [points]);
+
+  return (
+    <svg
+      className="pointer-events-none absolute inset-0"
+      viewBox="0 0 100 80"
+      preserveAspectRatio="none"
+      style={{ width: "100%", height: "100%" }}
+    >
+      <defs>
+        <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(59, 130, 246, 0.08)" />
+          <stop offset="100%" stopColor="rgba(59, 130, 246, 0)" />
+        </linearGradient>
+      </defs>
+      <path
+        ref={pathRef}
+        d={fillPath}
+        fill="url(#chartFill)"
+        className="opacity-60"
+      />
+      <path
+        d={pathD}
+        fill="none"
+        stroke="rgba(59, 130, 246, 0.25)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="opacity-70"
+        style={{
+          filter: "drop-shadow(0 0 6px rgba(59, 130, 246, 0.2))",
+          animation: "chart-draw 3s ease-out forwards",
+          strokeDasharray: 400,
+          strokeDashoffset: 400,
+        }}
+      />
+      <circle
+        cx={points[points.length - 1].x}
+        cy={points[points.length - 1].y}
+        r="2"
+        fill="rgba(59, 130, 246, 0.4)"
+        style={{
+          animation: "chart-pulse 2s ease-in-out infinite",
+        }}
+      />
+    </svg>
+  );
 }
 
 export default function AuthLayout({ children }) {
@@ -150,12 +241,14 @@ export default function AuthLayout({ children }) {
     }))
   );
 
+  const intervalRef = useRef(null);
+
   useEffect(() => {
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       setCandles((prev) =>
         prev.map((c, i) => {
           const movement = (Math.random() - 0.5) * 14;
-          const newBodyH = Math.max(8, Math.min(100, c.bodyH + movement));
+          const newBodyH = Math.max(10, Math.min(100, c.bodyH + movement));
           const newBodyBottom = c.dir === "up"
             ? c.bodyBottom - movement * 0.3
             : c.bodyBottom + movement * 0.3;
@@ -170,8 +263,8 @@ export default function AuthLayout({ children }) {
             ...c,
             bodyH: newBodyH,
             bodyBottom: clampedBottom,
-            wickHigh: newBodyH + (8 + ((i * 5) % 20)),
-            wickLow: 8 + ((i * 5) % 20),
+            wickHigh: newBodyH + (10 + ((i * 5) % 18)),
+            wickLow: 10 + ((i * 5) % 18),
             dir,
           };
         })
@@ -188,9 +281,9 @@ export default function AuthLayout({ children }) {
           return { ...p, change: newChange, side, id: Math.random() };
         })
       );
-    }, 2000);
+    }, 2200);
 
-    return () => clearInterval(interval);
+    return () => clearInterval(intervalRef.current);
   }, []);
 
   const tickerTape = useMemo(
@@ -203,8 +296,8 @@ export default function AuthLayout({ children }) {
             key={t.id}
             className="inline-flex items-center gap-1.5 mr-8 text-xs font-mono font-medium whitespace-nowrap"
           >
-            <span className="text-muted-foreground/60">{t.symbol}</span>
-            <span className={isUp ? "text-success/60" : "text-destructive/60"}>
+            <span className="text-white/40">{t.symbol}</span>
+            <span className={isUp ? "text-emerald-400/60" : "text-red-400/60"}>
               {isUp ? "▲" : "▼"} {t.change}%
             </span>
           </span>
@@ -279,73 +372,108 @@ export default function AuthLayout({ children }) {
   }, [btcPrice]);
 
   return (
-    <div className="relative flex min-h-screen overflow-hidden bg-[#0a0e1a]">
+    <div className="relative flex min-h-screen overflow-hidden" style={{ background: "#05080f" }}>
 
-      {/* Animated gradient mesh */}
+      {/* Deep gradient base */}
+      <div className="absolute inset-0 z-0"
+        style={{
+          background: "radial-gradient(ellipse at 20% 50%, rgba(20, 40, 80, 0.4) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(10, 50, 40, 0.2) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(30, 10, 60, 0.15) 0%, transparent 50%)"
+        }}
+      />
+
+      {/* Animated gradient orbs */}
       <div className="absolute inset-0 z-0">
         <div
-          className="absolute h-[600px] w-[600px] rounded-full opacity-30"
+          className="absolute rounded-full"
           style={{
-            background: "radial-gradient(circle, rgba(59,130,246,0.25) 0%, transparent 70%)",
-            top: "-10%",
-            left: "-5%",
-            animation: "blob-drift1 20s ease-in-out infinite",
+            width: "650px", height: "650px",
+            background: "radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 65%)",
+            top: "-12%", left: "-8%",
+            animation: "blob-drift1 22s ease-in-out infinite",
             willChange: "transform",
           }}
         />
         <div
-          className="absolute h-[500px] w-[500px] rounded-full opacity-20"
+          className="absolute rounded-full"
           style={{
-            background: "radial-gradient(circle, rgba(52,211,153,0.2) 0%, transparent 70%)",
-            bottom: "5%",
-            right: "10%",
-            animation: "blob-drift2 25s ease-in-out infinite",
+            width: "500px", height: "500px",
+            background: "radial-gradient(circle, rgba(20,184,166,0.15) 0%, transparent 65%)",
+            bottom: "0%", right: "5%",
+            animation: "blob-drift2 26s ease-in-out infinite",
             willChange: "transform",
           }}
         />
         <div
-          className="absolute h-[400px] w-[400px] rounded-full opacity-15"
+          className="absolute rounded-full"
           style={{
-            background: "radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%)",
-            top: "40%",
-            right: "30%",
-            animation: "blob-drift3 18s ease-in-out infinite",
+            width: "420px", height: "420px",
+            background: "radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 65%)",
+            top: "35%", right: "25%",
+            animation: "blob-drift3 20s ease-in-out infinite",
             willChange: "transform",
           }}
         />
         <div
-          className="absolute h-[350px] w-[350px] rounded-full opacity-10"
+          className="absolute rounded-full"
           style={{
-            background: "radial-gradient(circle, rgba(244,114,182,0.12) 0%, transparent 70%)",
-            top: "60%",
-            left: "20%",
-            animation: "blob-drift4 22s ease-in-out infinite",
+            width: "350px", height: "350px",
+            background: "radial-gradient(circle, rgba(251,146,60,0.08) 0%, transparent 65%)",
+            top: "55%", left: "15%",
+            animation: "blob-drift4 24s ease-in-out infinite",
+            willChange: "transform",
+          }}
+        />
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: "300px", height: "300px",
+            background: "radial-gradient(circle, rgba(236,72,153,0.06) 0%, transparent 65%)",
+            top: "10%", right: "10%",
+            animation: "blob-drift2 28s ease-in-out infinite reverse",
             willChange: "transform",
           }}
         />
       </div>
 
-      {/* Subtle noise texture overlay */}
-      <div className="absolute inset-0 z-[1] opacity-[0.025] pointer-events-none mix-blend-overlay" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 512 512\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }} />
+      {/* Scan line overlay */}
+      <div className="absolute inset-0 z-[1] pointer-events-none opacity-[0.015]"
+        style={{
+          backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)",
+          backgroundSize: "100% 4px",
+        }}
+      />
+
+      {/* Noise texture */}
+      <div className="absolute inset-0 z-[1] opacity-[0.02] pointer-events-none mix-blend-overlay"
+        style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 512 512\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")' }}
+      />
 
       {/* Vignette */}
-      <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: "radial-gradient(ellipse at center, transparent 40%, #0a0e1a 100%)" }} />
+      <div className="absolute inset-0 z-[2] pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at center, transparent 35%, #05080f 100%)" }}
+      />
 
-      {/* Full-screen Trading Visuals Background */}
+      {/* Full-screen trading visuals */}
       <div className="absolute inset-0 z-[3]">
 
-        {/* Fading gradient overlay at edges */}
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-[#0a0e1a] via-transparent to-[#0a0e1a]" />
+        {/* Side fade */}
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-[#05080f] via-transparent to-[#05080f]" />
 
-        {/* Horizontal grid lines */}
+        {/* Chart line overlay */}
+        <div className="absolute inset-0 opacity-40" style={{ top: "5%", bottom: "20%" }}>
+          <ChartLine />
+        </div>
+
+        {/* Grid with glowing intersections */}
         <div className="pointer-events-none absolute inset-0">
           {[20, 35, 50, 65, 80].map((pct) => (
             <div
               key={pct}
-              className="absolute inset-x-0 border-t border-white/[0.04]"
-              style={{ top: `${pct}%` }}
+              className="absolute inset-x-0 border-t"
+              style={{ top: `${pct}%`, borderColor: "rgba(255,255,255,0.035)" }}
             />
           ))}
+          <GridDots />
         </div>
 
         {/* Candles */}
@@ -355,10 +483,10 @@ export default function AuthLayout({ children }) {
           ))}
         </div>
 
-        {/* Floating particles */}
+        {/* Particles */}
         <ParticleField />
 
-        {/* Floating Ticker Symbols */}
+        {/* Floating tickers */}
         <div className="absolute left-[6%] top-[16%] text-xs font-mono font-medium">
           <LivePriceLabel value={livePrices[0]?.change || "0.00"} isUp={livePrices[0]?.side === "buy"} />
         </div>
@@ -366,8 +494,8 @@ export default function AuthLayout({ children }) {
           <LivePriceLabel value={livePrices[1]?.change || "0.00"} isUp={livePrices[1]?.side === "buy"} />
         </div>
 
-        {/* Price axis labels */}
-        <div className="pointer-events-none absolute bottom-[15%] left-3 flex flex-col justify-between text-[10px] font-mono text-white/20"
+        {/* Price axis */}
+        <div className="pointer-events-none absolute bottom-[15%] left-3 flex flex-col justify-between text-[10px] font-mono text-white/[0.15]"
           style={{ top: "8%" }}
         >
           {priceLabels.map((label, i) => (
@@ -375,8 +503,10 @@ export default function AuthLayout({ children }) {
           ))}
         </div>
 
-        {/* Scrolling Ticker Tape */}
-        <div className="absolute bottom-0 inset-x-0 h-10 overflow-hidden border-t border-white/[0.06] bg-[#0a0e1a]/60 backdrop-blur-md">
+        {/* Ticker tape */}
+        <div className="absolute bottom-0 inset-x-0 h-10 overflow-hidden border-t border-white/[0.05] backdrop-blur-md"
+          style={{ background: "rgba(5, 8, 15, 0.6)" }}
+        >
           <div
             className="flex h-full w-max items-center"
             style={{ animation: "ticker-scroll 30s linear infinite" }}
@@ -387,7 +517,7 @@ export default function AuthLayout({ children }) {
         </div>
       </div>
 
-      {/* Cursor-reactive Teleporting Badges */}
+      {/* Teleporting badges */}
       {teleporters.map((t, i) => {
         const isUp = badgeLabels[i].includes("▲") || badgeLabels[i].includes("▸");
         return (
@@ -397,13 +527,13 @@ export default function AuthLayout({ children }) {
             style={{
               left: t.x,
               top: t.y,
-              borderColor: isUp ? "hsla(142, 71%, 45%, 0.35)" : "hsla(0, 72%, 51%, 0.35)",
+              borderColor: isUp ? "hsla(152, 75%, 45%, 0.3)" : "hsla(0, 75%, 50%, 0.3)",
               background: isUp
-                ? "hsla(142, 71%, 45%, 0.08)"
-                : "hsla(0, 72%, 51%, 0.08)",
+                ? "hsla(152, 75%, 45%, 0.06)"
+                : "hsla(0, 75%, 50%, 0.06)",
               color: isUp
-                ? "hsla(142, 71%, 60%, 0.85)"
-                : "hsla(0, 72%, 60%, 0.85)",
+                ? "hsla(152, 75%, 60%, 0.8)"
+                : "hsla(0, 75%, 60%, 0.8)",
             }}
           >
             {badgeLabels[i]}
@@ -411,82 +541,105 @@ export default function AuthLayout({ children }) {
         );
       })}
 
-      {/* Center Content — Welcome & Market Stats */}
-      <div className="pointer-events-none absolute inset-y-0 z-[5] hidden items-center lg:flex" style={{ left: '12%' }}>
-        <div className="text-left">
+      {/* Center — Welcome & Market Stats */}
+      <div className="pointer-events-none absolute inset-y-0 z-[5] hidden items-center lg:flex" style={{ left: "10%" }}>
+        <div className="text-left max-w-md">
           <motion.h2
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15 }}
-            className="text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-300 to-blue-400 drop-shadow-[0_0_40px_rgba(59,130,246,0.5)]"
+            transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+            className="text-5xl font-black tracking-tight"
+            style={{
+              background: "linear-gradient(135deg, rgba(147,197,253,1) 0%, rgba(96,165,250,1) 50%, rgba(147,197,253,1) 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              filter: "drop-shadow(0 0 40px rgba(59,130,246,0.3))",
+            }}
           >
             Trade Smarter
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="mt-3 text-lg font-medium text-white/50 drop-shadow-[0_0_20px_rgba(255,255,255,0.06)]"
+            transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-3 text-lg font-medium text-white/40"
           >
             AI-driven insights — real-time discipline — consistent returns
           </motion.p>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="mt-10 flex items-center gap-12"
+            transition={{ duration: 0.7, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-10 flex items-center gap-14"
           >
             <div className="text-center">
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold font-mono tracking-tight text-white/70">$4.2</span>
-                <span className="text-sm font-medium text-white/40">T</span>
+                <span className="text-2xl font-bold font-mono tracking-tight text-white/60">$4.2</span>
+                <span className="text-sm font-medium text-white/30">T</span>
               </div>
-              <div className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/30">Volume 24h</div>
+              <div className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/25">Volume 24h</div>
             </div>
-            <div className="h-8 w-px bg-white/10" />
+            <div className="h-8 w-px bg-white/[0.06]" />
             <div className="text-center">
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold font-mono tracking-tight text-emerald-400/70">+12.4</span>
-                <span className="text-sm font-medium text-emerald-400/40">%</span>
+                <span className="text-2xl font-bold font-mono tracking-tight text-emerald-400/60">+12.4</span>
+                <span className="text-sm font-medium text-emerald-400/30">%</span>
               </div>
-              <div className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/30">Market Cap</div>
+              <div className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/25">Market Cap</div>
             </div>
-            <div className="h-8 w-px bg-white/10" />
+            <div className="h-8 w-px bg-white/[0.06]" />
             <div className="text-center">
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold font-mono tracking-tight text-white/70">2,847</span>
+                <span className="text-2xl font-bold font-mono tracking-tight text-white/60">2,847</span>
               </div>
-              <div className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/30">Assets</div>
+              <div className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/25">Assets</div>
             </div>
           </motion.div>
         </div>
       </div>
 
-      {/* Auth Form Overlay — Right Side */}
+      {/* Auth Form */}
       <div className="relative z-10 flex min-h-screen w-full items-center justify-center px-4 py-10 sm:max-w-md lg:ml-auto lg:mr-10 lg:max-w-sm">
         <motion.div
-          initial={{ opacity: 0, y: 20, scale: 0.98 }}
+          initial={{ opacity: 0, y: 24, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.45 }}
-          className="w-full"
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full relative"
         >
-          <div className="rounded-2xl border border-white/[0.08] bg-[#111827]/90 backdrop-blur-2xl p-8 shadow-2xl shadow-blue-500/5 lg:p-10">
+          {/* Animated border glow */}
+          <div
+            className="absolute -inset-[1px] rounded-2xl opacity-60"
+            style={{
+              background: "linear-gradient(135deg, rgba(59,130,246,0.2), rgba(20,184,166,0.1), rgba(139,92,246,0.1), rgba(59,130,246,0.2))",
+              backgroundSize: "300% 300%",
+              animation: "border-rotate 8s ease-in-out infinite",
+              filter: "blur(1px)",
+            }}
+          />
 
+          <div className="relative rounded-2xl border border-white/[0.06] backdrop-blur-2xl p-8 shadow-2xl lg:p-10"
+            style={{ background: "rgba(10, 15, 30, 0.92)" }}
+          >
             {/* Logo */}
             <div className="mb-8 flex flex-col items-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-blue-500 text-xl font-black text-white shadow-[0_0_40px_rgba(37,99,235,0.3)]">
+              <div
+                className="flex h-14 w-14 items-center justify-center rounded-2xl text-xl font-black text-white"
+                style={{
+                  background: "linear-gradient(135deg, rgba(37,99,235,1), rgba(59,130,246,1))",
+                  boxShadow: "0 0 40px rgba(37,99,235,0.25), 0 0 80px rgba(37,99,235,0.1)",
+                }}
+              >
                 <DollarSign size={24} />
               </div>
-              <h1 className="mt-4 text-2xl font-black tracking-tight text-white">
+              <h1 className="mt-4 text-2xl font-black tracking-tight text-white/90">
                 TradeOS
               </h1>
-              <p className="mt-1.5 text-sm text-white/50">
+              <p className="mt-1.5 text-sm text-white/40">
                 Professional Trading Workspace
               </p>
             </div>
 
             {children}
-
           </div>
         </motion.div>
       </div>
