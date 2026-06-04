@@ -55,12 +55,12 @@ function Candle({ candle, delay }) {
         }}
       />
       <div
-        className="absolute left-1/2 w-[1.5px] -translate-x-1/2 origin-top"
+        className="absolute left-1/2 w-[1.5px] -translate-x-1/2"
         style={{
           background: color,
-          top: candle.bodyTop,
+          bottom: Math.max(0, candle.bodyBottom - candle.wickLow),
           height: candle.wickLow,
-          transition: "height 1.8s ease, top 1.8s ease",
+          transition: "height 1.8s ease, bottom 1.8s ease",
         }}
       />
       <div
