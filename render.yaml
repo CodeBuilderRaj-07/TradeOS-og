@@ -33,4 +33,4 @@ services:
     staticPublishPath: ./tradeos-frontend/dist
     envVars:
       - key: VITE_API_URL
-        value: https://tradeos-backend.onrender.com/api
+        value: https://api.tradeos.gt.tc/api
