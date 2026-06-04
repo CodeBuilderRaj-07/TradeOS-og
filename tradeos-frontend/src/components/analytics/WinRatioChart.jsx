@@ -9,6 +9,9 @@ import {
 import LegendItem
   from "./LegendItem";
 
+import GlassPanel
+  from "@/components/ui/GlassPanel";
+
 const COLORS = [
   "#22C55E",
   "#EF4444",
@@ -20,17 +23,17 @@ export default function WinRatioChart({
 
   return (
 
-    <div className="<GlassPanel /> p-6 backdrop-blur-2xl">
+    <GlassPanel className="p-6 backdrop-blur-2xl">
 
       <div className="mb-6">
 
-        <h3 className="text-lg font-bold text-white">
+        <h3 className="text-lg font-bold text-foreground">
 
           Win Ratio
 
         </h3>
 
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-muted-foreground">
 
           Real trade distribution
 
@@ -90,6 +93,6 @@ export default function WinRatioChart({
 
       </div>
 
-    </div>
+    </GlassPanel>
   );
 }

@@ -5,13 +5,13 @@ export default function InsightBadge({
   const styles = {
 
     Positive:
-      "bg-green-500/10 text-green-400 border-green-500/10",
+      "bg-success/10 text-green-400 border-success/10",
 
     Warning:
       "bg-yellow-500/10 text-yellow-400 border-yellow-500/10",
 
     Risk:
-      "bg-red-500/10 text-red-400 border-red-500/10",
+      "bg-destructive/10 text-red-400 border-destructive/10",
   };
 
   return (

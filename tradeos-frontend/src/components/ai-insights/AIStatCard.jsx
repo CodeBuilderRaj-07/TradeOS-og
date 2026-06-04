@@ -17,13 +17,13 @@ export default function AIStatCard({
 
         <div className="flex items-center justify-between">
 
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
 
             {title}
 
           </p>
 
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400">
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
 
             <Icon size={18} />
 
@@ -37,7 +37,7 @@ export default function AIStatCard({
               ? "text-green-400"
               : warning
               ? "text-yellow-400"
-              : "text-white"
+              : "text-foreground"
           }`}
         >
 
@@ -45,7 +45,7 @@ export default function AIStatCard({
 
         </h2>
 
-        <p className="mt-2 text-sm text-zinc-500">
+        <p className="mt-2 text-sm text-muted-foreground">
 
           {description}
 

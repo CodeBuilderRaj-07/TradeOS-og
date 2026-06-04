@@ -4,7 +4,7 @@ export default function AdminLayout({
 
   return (
 
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-foreground">
 
       <div className="border-b border-white/10 p-5 text-xl font-bold">
 

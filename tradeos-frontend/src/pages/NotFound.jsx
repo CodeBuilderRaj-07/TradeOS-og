@@ -9,19 +9,20 @@ import {
   Compass,
 } from "lucide-react";
 
+
 export default function NotFound() {
 
   return (
 
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#050816] px-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4">
 
       {/* Glow */}
-      <div className="absolute left-[-120px] top-[-120px] h-[320px] w-[320px] rounded-full bg-blue-500/10 blur-3xl" />
+      <div className="absolute left-[-120px] top-[-120px] h-[320px] w-[320px] rounded-full bg-primary/10 blur-3xl" />
 
-      <div className="absolute bottom-[-120px] right-[-120px] h-[320px] w-[320px] rounded-full bg-blue-500/10 blur-3xl" />
+      <div className="absolute bottom-[-120px] right-[-120px] h-[320px] w-[320px] rounded-full bg-primary/10 blur-3xl" />
 
       {/* Grid */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px]" />
+      <div className="absolute inset-0 bg-[linear-gradient(hsl(var(--foreground)/0.02)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--foreground)/0.02)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
       {/* Content */}
       <motion.div
@@ -40,35 +41,35 @@ export default function NotFound() {
           duration: 0.4,
         }}
 
-        className="relative z-10 w-full max-w-xl rounded-[36px] border border-white/5 bg-white/[0.03] p-10 text-center backdrop-blur-2xl"
+        className="relative z-10 w-full max-w-xl rounded-[36px] border border-border bg-card/60 p-10 text-center backdrop-blur-2xl"
       >
 
         {/* Icon */}
-        <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-[28px] bg-blue-500/10">
+        <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-[28px] bg-primary/10">
 
           <Compass
             size={42}
-            className="text-blue-400"
+            className="text-primary"
           />
 
         </div>
 
         {/* 404 */}
-        <h1 className="mt-8 text-7xl font-black tracking-tight text-white">
+        <h1 className="mt-8 text-7xl font-black tracking-tight text-foreground">
 
           404
 
         </h1>
 
-        <h2 className="mt-3 text-2xl font-bold text-white">
+        <h2 className="mt-3 text-2xl font-bold text-foreground">
 
           Page Not Found
 
         </h2>
 
-        <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-zinc-500">
+        <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-muted-foreground">
 
-          The page you are looking for doesn’t exist,
+          The page you are looking for doesn't exist,
           may have been moved,
           or is temporarily unavailable.
 
@@ -79,7 +80,7 @@ export default function NotFound() {
 
           <Link
             to="/"
-            className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 px-6 text-sm font-semibold text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_35px_rgba(37,99,235,0.25)]"
+            className="flex h-14 items-center justify-center gap-2 rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors"
           >
 
             <ArrowLeft size={18} />
@@ -92,7 +93,7 @@ export default function NotFound() {
             onClick={() =>
               window.history.back()
             }
-            className="flex h-14 items-center justify-center rounded-2xl border border-white/5 bg-white/[0.03] px-6 text-sm font-semibold text-white transition-all duration-300 hover:border-blue-500/20"
+            className="flex h-14 items-center justify-center rounded-lg border border-border bg-card px-6 text-sm font-semibold text-foreground transition-all duration-300 hover:border-primary/20"
           >
 
             Go Back

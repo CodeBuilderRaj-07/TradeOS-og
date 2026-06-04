@@ -1,43 +1,46 @@
+import GlassPanel from "@/components/ui/GlassPanel";
+
 export default function SuggestedImprovementCard() {
 
-  const suggestions = [
 
-    "Reduce overtrading after 3 consecutive wins.",
+  const suggestions = [];
 
-    "Focus more on breakout setups during London session.",
-
-    "Avoid revenge entries after 2 losses in a row.",
-  ];
 
   return (
 
-    <div className="<GlassPanel /> p-6 backdrop-blur-2xl">
+    <GlassPanel className="p-6 backdrop-blur-2xl">
 
-      <h2 className="text-xl font-bold text-white">
+      <h2 className="text-xl font-bold text-foreground">
 
         Suggested Improvements
 
       </h2>
 
-      <div className="mt-6 space-y-4">
+      <div className="mt-6">
 
-        {suggestions.map(
-          (item, index) => (
+        {suggestions.length > 0 ? (
+          <div className="space-y-4">
+            {suggestions.map(
+              (item, index) => (
 
-            <div
-              key={index}
-              className="rounded-2xl border border-white/5 bg-[#0B1120]/70 p-4 text-sm text-zinc-300"
-            >
+                <div
+                  key={index}
+                  className="rounded-lg border border-border bg-card/60 p-4 text-sm text-muted-foreground"
+                >
 
-              {item}
+                  {item}
 
-            </div>
+                </div>
 
-          )
+              )
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No suggestions yet. Complete more trades to receive personalized improvement tips.</p>
         )}
 
       </div>
 
-    </div>
+    </GlassPanel>
   );
 }

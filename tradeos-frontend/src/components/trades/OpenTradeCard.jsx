@@ -4,6 +4,9 @@ import {
   XCircle,
 } from "lucide-react";
 
+import GlassPanel
+  from "@/components/ui/GlassPanel";
+
 import TradeStat
   from "./TradeStat";
 
@@ -17,16 +20,16 @@ export default function OpenTradeCard({
 
   return (
 
-    <div className="grid grid-cols-1 gap-6 <GlassPanel /> p-6 backdrop-blur-2xl xl:grid-cols-[1.3fr_1fr_1fr_1fr_1fr_auto]">
+    <GlassPanel className="grid grid-cols-1 gap-6 p-6 xl:grid-cols-[1.3fr_1fr_1fr_1fr_1fr_auto]">
 
       {/* Symbol */}
       <div className="flex items-center gap-4">
 
         <div
-          className={`flex h-14 w-14 items-center justify-center rounded-2xl ${
+          className={`flex h-14 w-14 items-center justify-center rounded-lg ${
             isSell
-              ? "bg-red-500/10"
-              : "bg-green-500/10"
+              ? "bg-destructive/10"
+              : "bg-success/10"
           }`}
         >
 
@@ -50,13 +53,13 @@ export default function OpenTradeCard({
 
         <div>
 
-          <h3 className="text-xl font-bold text-white">
+          <h3 className="text-xl font-bold text-foreground">
 
             {trade.symbol}
 
           </h3>
 
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-muted-foreground">
 
             {trade.tradeType}
 
@@ -100,7 +103,7 @@ export default function OpenTradeCard({
 
         <div className="mt-3">
 
-          <span className="rounded-full border border-green-500/10 bg-green-500/10 px-4 py-2 text-xs font-semibold text-green-400">
+          <span className="rounded-full border border-success/10 bg-success/10 px-4 py-2 text-xs font-semibold text-green-400">
 
             OPEN
 
@@ -115,13 +118,13 @@ export default function OpenTradeCard({
         onClick={() =>
           closeTrade(trade.id)
         }
-        className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10 text-red-400 transition-all duration-300 hover:bg-red-500/20"
+        className="flex h-12 w-12 items-center justify-center rounded-lg bg-destructive/10 text-red-400 transition-all duration-300 hover:bg-destructive/20"
       >
 
         <XCircle size={20} />
 
       </button>
 
-    </div>
+    </GlassPanel>
   );
 }

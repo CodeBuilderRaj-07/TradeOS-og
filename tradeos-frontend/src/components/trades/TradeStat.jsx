@@ -8,7 +8,7 @@ export default function TradeStat({
 
     <div>
 
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
 
         {title}
 
@@ -17,8 +17,8 @@ export default function TradeStat({
       <h3
         className={`text-lg font-bold ${
           blue
-            ? "text-blue-400"
-            : "text-white"
+            ? "text-primary"
+            : "text-foreground"
         }`}
       >
 

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -24,13 +25,11 @@ public class DeepSeekAiService {
     public Map<String, String> askAi(
             String prompt
     ) {
-
         try {
-
             String requestBody =
                     """
                     {
-                      "model": "deepseek/deepseek-chat",
+                      "model": "deepseek/deepseek-v4-flash:free",
                       "messages": [
                         {
                           "role": "user",
@@ -38,69 +37,80 @@ public class DeepSeekAiService {
                         }
                       ]
                     }
-                    """.formatted(prompt);
+                    """.formatted(prompt.replace("\"", "\\\""));
 
-            String rawResponse =
-                    webClient.post()
+            return executeRequest(requestBody);
 
-                            .uri("/v1/chat/completions")
+        } catch (Exception e) {
+            return errorResponse(e.getMessage());
+        }
+    }
 
-                            .header(
-                                    "Authorization",
-                                    "Bearer " + apiKey
-                            )
+    public Map<String, String> chat(
+            List<Map<String, String>> messages
+    ) {
+        try {
 
-                            .contentType(
-                                    MediaType.APPLICATION_JSON
-                            )
+            StringBuilder messagesJson = new StringBuilder("[");
+            for (int i = 0; i < messages.size(); i++) {
+                Map<String, String> msg = messages.get(i);
+                String role = msg.getOrDefault("role", "user");
+                String content = msg.getOrDefault("content", "").replace("\"", "\\\"");
+                messagesJson.append(String.format(
+                        "{\"role\": \"%s\", \"content\": \"%s\"}",
+                        role, content
+                ));
+                if (i < messages.size() - 1) {
+                    messagesJson.append(",");
+                }
+            }
+            messagesJson.append("]");
 
-                            .bodyValue(requestBody)
-
-                            .retrieve()
-
-                            .bodyToMono(String.class)
-
-                            .block();
-
-            ObjectMapper objectMapper =
-                    new ObjectMapper();
-
-            JsonNode jsonNode =
-                    objectMapper.readTree(rawResponse);
-
-            String aiMessage =
-                    jsonNode
-
-                            .get("choices")
-                            .get(0)
-
-                            .get("message")
-
-                            .get("content")
-
-                            .asText();
-
-            Map<String, String> result =
-                    new HashMap<>();
-
-            result.put(
-                    "response",
-                    aiMessage
+            String requestBody = String.format(
+                    "{\"model\": \"deepseek/deepseek-v4-flash:free\", \"messages\": %s}",
+                    messagesJson.toString()
             );
 
+            return executeRequest(requestBody);
+
+        } catch (Exception e) {
+            return errorResponse(e.getMessage());
+        }
+    }
+
+    private Map<String, String> executeRequest(String requestBody) {
+        try {
+            String rawResponse =
+                    webClient.post()
+                            .uri("/v1/chat/completions")
+                            .header("Authorization", "Bearer " + apiKey)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .bodyValue(requestBody)
+                            .retrieve()
+                            .bodyToMono(String.class)
+                            .block();
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(rawResponse);
+            String aiMessage = jsonNode
+                    .get("choices")
+                    .get(0)
+                    .get("message")
+                    .get("content")
+                    .asText();
+
+            Map<String, String> result = new HashMap<>();
+            result.put("response", aiMessage);
             return result;
 
         } catch (Exception e) {
-
-            Map<String, String> error =
-                    new HashMap<>();
-
-            error.put(
-                    "message",
-                    e.getMessage()
-            );
-
-            return error;
+            return errorResponse(e.getMessage());
         }
+    }
+
+    private Map<String, String> errorResponse(String message) {
+        Map<String, String> error = new HashMap<>();
+        error.put("message", message);
+        return error;
     }
 }

@@ -1,3 +1,6 @@
+import GlassPanel
+  from "@/components/ui/GlassPanel";
+
 export default function AnalyticsMetricCard({
   title,
   value,
@@ -7,7 +10,7 @@ export default function AnalyticsMetricCard({
 
   return (
 
-    <div className="relative overflow-hidden <GlassPanel /> p-5 backdrop-blur-2xl">
+    <GlassPanel className="relative overflow-hidden p-5 backdrop-blur-2xl">
 
       <div className="absolute right-[-40px] top-[-40px] h-40 w-40 rounded-full bg-blue-500/10 blur-3xl" />
 
@@ -15,13 +18,13 @@ export default function AnalyticsMetricCard({
 
         <div className="flex items-center justify-between">
 
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
 
             {title}
 
           </p>
 
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400">
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
 
             <Icon size={18} />
 
@@ -33,7 +36,7 @@ export default function AnalyticsMetricCard({
           className={`mt-6 text-3xl font-bold tracking-tight ${
             success
               ? "text-green-400"
-              : "text-white"
+              : "text-foreground"
           }`}
         >
 
@@ -43,6 +46,6 @@ export default function AnalyticsMetricCard({
 
       </div>
 
-    </div>
+    </GlassPanel>
   );
 }

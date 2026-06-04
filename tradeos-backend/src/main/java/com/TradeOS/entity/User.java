@@ -17,6 +17,11 @@ public class User {
 
     private String password;
 
+    @Column(nullable = false)
+    private String role = "TRADER";
+
+    private String resetToken;
+
     public Long getId() {
         return id;
     }
@@ -55,5 +60,21 @@ public class User {
             String password
     ) {
         this.password = password;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public String getResetToken() {
+        return resetToken;
+    }
+
+    public void setResetToken(String resetToken) {
+        this.resetToken = resetToken;
     }
 }

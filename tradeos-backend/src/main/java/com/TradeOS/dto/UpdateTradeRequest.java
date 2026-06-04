@@ -1,54 +1,59 @@
 package com.TradeOS.dto;
 
+import jakarta.validation.constraints.Min;
+
 public class UpdateTradeRequest {
 
     private String symbol;
 
+    @Min(value = 1, message = "Entry price must be positive")
     private double entryPrice;
 
+    @Min(value = 1, message = "Stop loss must be positive")
     private double stopLoss;
 
+    @Min(value = 1, message = "Take profit must be positive")
     private double takeProfit;
 
     private String notes;
 
-    public String getSymbol() {
-        return symbol;
-    }
+    private double riskPct;
 
-    public void setSymbol(String symbol) {
-        this.symbol = symbol;
-    }
+    private String session;
 
-    public double getEntryPrice() {
-        return entryPrice;
-    }
+    private String strategy;
 
-    public void setEntryPrice(double entryPrice) {
-        this.entryPrice = entryPrice;
-    }
+    private String timeframe;
 
-    public double getStopLoss() {
-        return stopLoss;
-    }
+    private String confidence;
 
-    public void setStopLoss(double stopLoss) {
-        this.stopLoss = stopLoss;
-    }
+    public String getSymbol() { return symbol; }
+    public void setSymbol(String symbol) { this.symbol = symbol; }
 
-    public double getTakeProfit() {
-        return takeProfit;
-    }
+    public double getEntryPrice() { return entryPrice; }
+    public void setEntryPrice(double entryPrice) { this.entryPrice = entryPrice; }
 
-    public void setTakeProfit(double takeProfit) {
-        this.takeProfit = takeProfit;
-    }
+    public double getStopLoss() { return stopLoss; }
+    public void setStopLoss(double stopLoss) { this.stopLoss = stopLoss; }
 
-    public String getNotes() {
-        return notes;
-    }
+    public double getTakeProfit() { return takeProfit; }
+    public void setTakeProfit(double takeProfit) { this.takeProfit = takeProfit; }
 
-    public void setNotes(String notes) {
-        this.notes = notes;
-    }
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
+
+    public double getRiskPct() { return riskPct; }
+    public void setRiskPct(double riskPct) { this.riskPct = riskPct; }
+
+    public String getSession() { return session; }
+    public void setSession(String session) { this.session = session; }
+
+    public String getStrategy() { return strategy; }
+    public void setStrategy(String strategy) { this.strategy = strategy; }
+
+    public String getTimeframe() { return timeframe; }
+    public void setTimeframe(String timeframe) { this.timeframe = timeframe; }
+
+    public String getConfidence() { return confidence; }
+    public void setConfidence(String confidence) { this.confidence = confidence; }
 }

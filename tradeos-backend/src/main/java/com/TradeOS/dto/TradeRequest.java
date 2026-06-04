@@ -31,6 +31,16 @@ public class TradeRequest {
 
     private String notes;
 
+    private double riskPct;
+
+    private String session;
+
+    private String strategy;
+
+    private String timeframe;
+
+    private String confidence;
+
     public String getSymbol() {
         return symbol;
     }
@@ -110,4 +120,19 @@ public class TradeRequest {
     public void setNotes(String notes) {
         this.notes = notes;
     }
+
+    public double getRiskPct() { return riskPct; }
+    public void setRiskPct(double riskPct) { this.riskPct = riskPct; }
+
+    public String getSession() { return session; }
+    public void setSession(String session) { this.session = session; }
+
+    public String getStrategy() { return strategy; }
+    public void setStrategy(String strategy) { this.strategy = strategy; }
+
+    public String getTimeframe() { return timeframe; }
+    public void setTimeframe(String timeframe) { this.timeframe = timeframe; }
+
+    public String getConfidence() { return confidence; }
+    public void setConfidence(String confidence) { this.confidence = confidence; }
 }

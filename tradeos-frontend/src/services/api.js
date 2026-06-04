@@ -2,25 +2,28 @@ import axios from "axios";
 
 import {
   getToken,
-  removeToken,
+  clearAuth,
 } from "@/services/tokenService";
 
 import {
   errorToast,
 } from "@/services/toastService";
 
+let redirecting = false;
+
+/* Navigate without full page reload */
+export function emitNavigate(path) {
+  window.dispatchEvent(new CustomEvent("app-navigate", { detail: { path } }));
+}
+
 /* Axios Instance */
 const API = axios.create({
 
   baseURL:
-    import.meta.env.VITE_API_URL ||
-
-    "https://tradeos-backend-xmcr.onrender.com/api",
+    import.meta.env.VITE_API_URL || "/api",
 
   headers: {
-
-    "Content-Type":
-      "application/json",
+    "Content-Type": "application/json",
   },
 
   timeout: 15000,
@@ -31,69 +34,43 @@ API.interceptors.request.use(
 
   (config) => {
 
-    const token =
-      getToken();
+    const token = getToken();
 
     if (token) {
-
-      config.headers.Authorization =
-        `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
     return config;
   },
 
-  (error) => {
-
-    return Promise.reject(
-      error
-    );
-  }
+  (error) => Promise.reject(error)
 );
 
 /* Response Interceptor */
 API.interceptors.response.use(
 
-  (response) =>
-    response,
+  (response) => response,
 
   async (error) => {
 
-    const status =
-      error?.response?.status;
+    const status = error?.response?.status;
 
-    /* Unauthorized */
-    if (status === 401) {
-
-      removeToken();
-
-      errorToast(
-        "Session expired. Please login again."
-      );
-
-      window.location.href =
-        "/login";
+    if (status === 401 && !redirecting && !window.location.pathname.startsWith("/login")) {
+      redirecting = true;
+      clearAuth();
+      errorToast("Session expired. Please login again.");
+      window.dispatchEvent(new CustomEvent("app-navigate", { detail: "/login" }));
     }
 
-    /* Forbidden */
     if (status === 403) {
-
-      errorToast(
-        "Access denied."
-      );
+      errorToast("Access denied.");
     }
 
-    /* Server Error */
     if (status >= 500) {
-
-      errorToast(
-        "Server error occurred."
-      );
+      errorToast("Server error occurred.");
     }
 
-    return Promise.reject(
-      error
-    );
+    return Promise.reject(error);
   }
 );
 

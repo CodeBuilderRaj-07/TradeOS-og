@@ -1,69 +1,53 @@
 import { create }
   from "zustand";
 
+import API
+  from "@/services/api";
+
+const parseInsightText = (text, type) => {
+  if (!text) return [];
+  const sentences = text.split(/(?<=\.)\s+/).filter(Boolean);
+  return sentences.map((s) => ({
+    title: s.length > 50 ? s.slice(0, 50) + "..." : "AI Insight",
+    description: s,
+    type,
+  }));
+};
+
 export const useAIInsightsStore =
   create((set) => ({
 
     loading: true,
-
     insights: [],
+    aiInsight: "",
+    psychologyInsight: "",
 
     fetchInsights:
       async () => {
 
         try {
 
-          const insights = [
+          const [aiRes, psychRes] = await Promise.allSettled([
+            API.get("/ai/insights"),
+            API.get("/psychology/analyze"),
+          ]);
 
-            {
-              title:
-                "Overtrading Detected",
+          const aiText = aiRes.value?.data?.aiInsight || "";
+          const psychText = psychRes.value?.data?.psychologyInsight || "";
 
-              description:
-                "You opened 42% more trades this week compared to your average behavior.",
-
-              type: "Warning",
-            },
-
-            {
-              title:
-                "Best Performance Hours",
-
-              description:
-                "Your highest win rate occurs between 9 AM and 12 PM market session.",
-
-              type: "Positive",
-            },
-
-            {
-              title:
-                "Risk Management Improved",
-
-              description:
-                "Average stop loss discipline improved by 18% this month.",
-
-              type: "Positive",
-            },
-
-            {
-              title:
-                "Emotional Trading Spike",
-
-              description:
-                "Losses increased after revenge-trading behavior on losing streaks.",
-
-              type: "Risk",
-            },
-          ];
+          const aiCards = parseInsightText(aiText, "Positive");
+          const psychCards = parseInsightText(psychText, "Warning");
 
           set({
-            insights,
+            insights: [...aiCards, ...psychCards],
+            aiInsight: aiText,
+            psychologyInsight: psychText,
             loading: false,
           });
 
         } catch (error) {
 
-          console.log(error);
+          console.error(error);
 
           set({
             loading: false,

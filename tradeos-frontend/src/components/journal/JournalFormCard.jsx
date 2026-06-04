@@ -1,6 +1,9 @@
 import { Flame }
   from "lucide-react";
 
+import GlassPanel
+  from "@/components/ui/GlassPanel";
+
 export default function JournalFormCard({
   formData,
   handleChange,
@@ -9,11 +12,11 @@ export default function JournalFormCard({
 
   return (
 
-    <div className="<GlassPanel /> p-6 backdrop-blur-2xl">
+    <GlassPanel className="p-6 backdrop-blur-2xl">
 
       <div className="flex items-center gap-3">
 
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-400">
+        <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-orange-500/10 text-orange-400">
 
           <Flame size={18} />
 
@@ -21,13 +24,13 @@ export default function JournalFormCard({
 
         <div>
 
-          <h3 className="text-lg font-bold text-white">
+          <h3 className="text-lg font-bold text-foreground">
 
             Create Journal
 
           </h3>
 
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-muted-foreground">
 
             Track execution quality
 
@@ -44,7 +47,7 @@ export default function JournalFormCard({
           value={formData.symbol}
           onChange={handleChange}
           placeholder="Symbol"
-          className="h-12 w-full rounded-2xl border border-white/5 bg-[#0B1120]/70 px-4 text-sm text-white outline-none transition-all focus:border-blue-500/20"
+          className="h-12 w-full rounded-lg border border-border bg-card/60 px-4 text-sm text-foreground outline-none transition-all focus:border-primary/30"
         />
 
         <input
@@ -52,7 +55,7 @@ export default function JournalFormCard({
           value={formData.strategy}
           onChange={handleChange}
           placeholder="Strategy"
-          className="h-12 w-full rounded-2xl border border-white/5 bg-[#0B1120]/70 px-4 text-sm text-white outline-none transition-all focus:border-blue-500/20"
+          className="h-12 w-full rounded-lg border border-border bg-card/60 px-4 text-sm text-foreground outline-none transition-all focus:border-primary/30"
         />
 
         <input
@@ -60,7 +63,7 @@ export default function JournalFormCard({
           value={formData.emotion}
           onChange={handleChange}
           placeholder="Emotion"
-          className="h-12 w-full rounded-2xl border border-white/5 bg-[#0B1120]/70 px-4 text-sm text-white outline-none transition-all focus:border-blue-500/20"
+          className="h-12 w-full rounded-lg border border-border bg-card/60 px-4 text-sm text-foreground outline-none transition-all focus:border-primary/30"
         />
 
         <input
@@ -68,7 +71,7 @@ export default function JournalFormCard({
           value={formData.pnl}
           onChange={handleChange}
           placeholder="PNL"
-          className="h-12 w-full rounded-2xl border border-white/5 bg-[#0B1120]/70 px-4 text-sm text-white outline-none transition-all focus:border-blue-500/20"
+          className="h-12 w-full rounded-lg border border-border bg-card/60 px-4 text-sm text-foreground outline-none transition-all focus:border-primary/30"
         />
 
         <textarea
@@ -76,12 +79,12 @@ export default function JournalFormCard({
           value={formData.notes}
           onChange={handleChange}
           placeholder="Trade notes..."
-          className="min-h-[150px] w-full resize-none rounded-2xl border border-white/5 bg-[#0B1120]/70 p-4 text-sm text-white outline-none transition-all focus:border-blue-500/20"
+          className="min-h-[150px] w-full resize-none rounded-lg border border-border bg-card/60 p-4 text-sm text-foreground outline-none transition-all focus:border-primary/30"
         />
 
         <button
           onClick={createJournal}
-          className="h-12 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 text-sm font-semibold text-white transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_0_30px_rgba(37,99,235,0.25)]"
+          className="h-12 w-full rounded-lg bg-primary text-sm font-semibold text-primary-foreground transition-colors"
         >
 
           Save Journal
@@ -90,6 +93,6 @@ export default function JournalFormCard({
 
       </div>
 
-    </div>
+    </GlassPanel>
   );
 }

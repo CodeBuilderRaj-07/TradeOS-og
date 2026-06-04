@@ -5,7 +5,7 @@ export default function AiInsightCard() {
 
   return (
 
-    <div className="relative overflow-hidden rounded-3xl border border-blue-500/10 bg-blue-500/[0.05] p-5 backdrop-blur-2xl">
+    <div className="relative overflow-hidden rounded-lg border border-primary/10 bg-primary/[0.05] p-5 backdrop-blur-2xl">
 
       <div className="absolute right-[-50px] top-[-50px] h-40 w-40 rounded-full bg-blue-500/10 blur-3xl" />
 
@@ -13,7 +13,7 @@ export default function AiInsightCard() {
 
         <div className="flex items-center gap-3">
 
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400">
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
 
             <Brain size={20} />
 
@@ -21,13 +21,13 @@ export default function AiInsightCard() {
 
           <div>
 
-            <h3 className="text-sm font-semibold text-white">
+            <h3 className="text-sm font-semibold text-foreground">
 
               AI Market Insight
 
             </h3>
 
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-muted-foreground">
 
               Generated analysis
 
@@ -37,9 +37,9 @@ export default function AiInsightCard() {
 
         </div>
 
-        <p className="mt-6 text-sm leading-7 text-zinc-300">
+        <p className="mt-6 text-sm leading-7 text-muted-foreground">
 
-          BTC momentum remains bullish with increasing volatility and stronger buyer pressure across major exchanges.
+          No AI insights available yet. Start trading to generate analysis.
 
         </p>
 

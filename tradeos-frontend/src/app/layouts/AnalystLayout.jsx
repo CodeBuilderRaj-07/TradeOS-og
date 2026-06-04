@@ -4,9 +4,9 @@ export default function AnalystLayout({
 
   return (
 
-    <div className="min-h-screen bg-[#050816] text-white">
+    <div className="min-h-screen bg-background text-foreground">
 
-      <div className="border-b border-white/5 p-5 text-xl font-bold">
+      <div className="border-b border-border p-5 text-xl font-bold">
 
         Analyst Workspace
 

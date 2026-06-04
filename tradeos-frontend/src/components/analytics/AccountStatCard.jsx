@@ -6,9 +6,9 @@ export default function AccountStatCard({
 
   return (
 
-    <div className="rounded-2xl border border-white/5 bg-[#0B1120]/70 p-5">
+    <div className="rounded-lg border border-border bg-card/60 p-5">
 
-      <h3 className="text-base font-bold text-white">
+      <h3 className="text-base font-bold text-foreground">
 
         {title}
 
@@ -20,7 +20,7 @@ export default function AccountStatCard({
 
       </h2>
 
-      <p className="mt-3 text-sm text-zinc-500">
+      <p className="mt-3 text-sm text-muted-foreground">
 
         {description}
 

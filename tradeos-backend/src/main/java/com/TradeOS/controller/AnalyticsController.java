@@ -4,7 +4,6 @@ import com.TradeOS.analytics.AnalyticsService;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -13,8 +12,11 @@ import java.util.Map;
 @RequestMapping("/api/analytics")
 public class AnalyticsController {
 
-    @Autowired
-    private AnalyticsService analyticsService;
+    private final AnalyticsService analyticsService;
+
+    public AnalyticsController(AnalyticsService analyticsService) {
+        this.analyticsService = analyticsService;
+    }
 
     @GetMapping("/monthly-pnl")
     public Map<String, Double> getMonthlyPnl(
@@ -66,5 +68,18 @@ public class AnalyticsController {
 
         return analyticsService
                 .getDrawdownAnalytics(email);
+    }
+
+    @GetMapping("/by-symbol")
+    public Map<String, Map<String, Object>> getBySymbol(
+            HttpServletRequest request
+    ) {
+
+        String email =
+                (String)
+                        request.getAttribute("email");
+
+        return analyticsService
+                .getPerformanceBySymbol(email);
     }
 }

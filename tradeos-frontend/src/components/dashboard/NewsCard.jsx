@@ -1,3 +1,4 @@
+import GlassPanel from "@/components/ui/GlassPanel"
 import { Newspaper }
   from "lucide-react";
 
@@ -7,11 +8,11 @@ export default function NewsCard({
 
   return (
 
-    <div className="<GlassPanel /> p-5 backdrop-blur-2xl">
+    <GlassPanel className="p-5 backdrop-blur-2xl">
 
       <div className="mb-5 flex items-center gap-3">
 
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400">
+        <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
 
           <Newspaper size={20} />
 
@@ -19,13 +20,13 @@ export default function NewsCard({
 
         <div>
 
-          <h3 className="text-sm font-semibold text-white">
+          <h3 className="text-sm font-semibold text-foreground">
 
             Market News
 
           </h3>
 
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted-foreground">
 
             Latest updates
 
@@ -41,7 +42,7 @@ export default function NewsCard({
 
           <div
             key={index}
-            className="border-b border-white/5 pb-4 last:border-none"
+            className="border-b border-border pb-4 last:border-none"
           >
 
             <h4 className="text-sm font-medium leading-6 text-zinc-200">
@@ -50,7 +51,7 @@ export default function NewsCard({
 
             </h4>
 
-            <p className="mt-2 text-xs text-zinc-500">
+            <p className="mt-2 text-xs text-muted-foreground">
 
               {item.source?.name}
 
@@ -62,6 +63,6 @@ export default function NewsCard({
 
       </div>
 
-    </div>
+    </GlassPanel>
   );
 }

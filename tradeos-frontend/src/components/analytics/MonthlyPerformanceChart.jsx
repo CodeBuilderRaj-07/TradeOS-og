@@ -6,23 +6,26 @@ import {
   Tooltip,
 } from "recharts";
 
+import GlassPanel
+  from "@/components/ui/GlassPanel";
+
 export default function MonthlyPerformanceChart({
   data,
 }) {
 
   return (
 
-    <div className="<GlassPanel /> p-6 backdrop-blur-2xl">
+    <GlassPanel className="p-6 backdrop-blur-2xl">
 
       <div className="mb-6">
 
-        <h3 className="text-lg font-bold text-white">
+        <h3 className="text-lg font-bold text-foreground">
 
           Monthly Performance
 
         </h3>
 
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-muted-foreground">
 
           Real backend trading analytics
 
@@ -91,6 +94,6 @@ export default function MonthlyPerformanceChart({
 
       </div>
 
-    </div>
+    </GlassPanel>
   );
 }

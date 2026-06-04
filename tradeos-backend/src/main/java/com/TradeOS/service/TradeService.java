@@ -120,6 +120,12 @@ public class TradeService {
 
         trade.setNotes(request.getNotes());
 
+        trade.setRiskPct(request.getRiskPct());
+        trade.setSession(request.getSession());
+        trade.setStrategy(request.getStrategy());
+        trade.setTimeframe(request.getTimeframe());
+        trade.setConfidence(request.getConfidence());
+
         trade.setUserEmail(email);
 
         trade.setCreatedAt(LocalDateTime.now());
@@ -204,6 +210,57 @@ public class TradeService {
         tradeRepository.save(trade);
 
         return "Trade Closed Successfully";
+    }
+
+    public String moveToBreakeven(
+            Long tradeId,
+            String email
+    ) {
+        Trade trade = tradeRepository.findByIdAndUserEmail(tradeId, email);
+        if (trade == null) return "Trade Not Found";
+        if (!"OPEN".equals(trade.getStatus())) return "Trade is not open";
+
+        trade.setStopLoss(trade.getEntryPrice());
+        trade.setStatus("be_touched");
+        tradeRepository.save(trade);
+        return "Stop Loss moved to Breakeven";
+    }
+
+    public String partialClose(
+            Long tradeId,
+            double percentage,
+            String email
+    ) {
+        Trade trade = tradeRepository.findByIdAndUserEmail(tradeId, email);
+        if (trade == null) return "Trade Not Found";
+        if (!"OPEN".equals(trade.getStatus())) return "Trade is not open";
+
+        double originalSize = trade.getPositionSize();
+        double closeSize = originalSize * (percentage / 100.0);
+        double remainingSize = originalSize - closeSize;
+
+        if (remainingSize <= 0) {
+            return "Percentage too high. Use close instead.";
+        }
+
+        trade.setPositionSize(remainingSize);
+        tradeRepository.save(trade);
+        return String.format("Closed %.0f%% of position. Remaining: %s lots", percentage, remainingSize);
+    }
+
+    public String updateSlTp(
+            Long tradeId,
+            Double stopLoss,
+            Double takeProfit,
+            String email
+    ) {
+        Trade trade = tradeRepository.findByIdAndUserEmail(tradeId, email);
+        if (trade == null) return "Trade Not Found";
+
+        if (stopLoss != null) trade.setStopLoss(stopLoss);
+        if (takeProfit != null) trade.setTakeProfit(takeProfit);
+        tradeRepository.save(trade);
+        return "SL/TP updated successfully";
     }
 
     public String deleteTrade(

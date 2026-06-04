@@ -6,13 +6,13 @@ export default function AIInsightsHeader() {
 
       <div>
 
-        <h1 className="text-3xl font-bold tracking-tight text-white lg:text-4xl">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
 
           AI Insights
 
         </h1>
 
-        <p className="mt-2 text-sm text-zinc-500">
+        <p className="mt-2 text-sm text-muted-foreground">
 
           AI-powered trading behavior analysis
 
@@ -20,7 +20,7 @@ export default function AIInsightsHeader() {
 
       </div>
 
-      <button className="h-12 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 px-6 text-sm font-semibold text-white transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_0_35px_rgba(37,99,235,0.25)]">
+      <button className="h-12 rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors">
 
         Generate Report
 

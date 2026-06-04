@@ -1,32 +1,24 @@
 import { create }
   from "zustand";
 
+import {
+  getToken,
+  getUser,
+  clearAuth,
+} from "@/services/tokenService";
+
 export const useAuthStore =
   create((set) => ({
 
-    user: {
-      id: 1,
-      name: "Ashutosh",
-      role: "TRADER",
-    },
+    user: getUser(),
 
-    token:
-      localStorage.getItem(
-        "token"
-      ) || null,
+    token: getToken(),
 
     isAuthenticated:
-      !!localStorage.getItem(
-        "token"
-      ),
+      !!getToken(),
 
     login:
       ({ user, token }) => {
-
-        localStorage.setItem(
-          "token",
-          token
-        );
 
         set({
           user,
@@ -37,9 +29,7 @@ export const useAuthStore =
 
     logout: () => {
 
-      localStorage.removeItem(
-        "token"
-      );
+      clearAuth();
 
       set({
         user: null,

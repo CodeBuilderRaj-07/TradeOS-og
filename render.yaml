@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: tradeos-backend
+    env: docker
+    repo: https://github.com/CodeBuilderRaj-07/TradeOS-og
+    region: oregon
+    plan: free
+    dockerfilePath: ./tradeos-backend/Dockerfile
+    envVars:
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: TWELVEDATA_API_KEY
+        sync: false
+      - key: NEWS_API_KEY
+        sync: false
+      - key: GOLD_API_KEY
+        sync: false
+
+  - type: web
+    name: tradeos-frontend
+    env: static
+    repo: https://github.com/CodeBuilderRaj-07/TradeOS-og
+    region: oregon
+    buildCommand: cd tradeos-frontend && npm ci && npm run build
+    staticPublishPath: ./tradeos-frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://tradeos-backend.onrender.com/api

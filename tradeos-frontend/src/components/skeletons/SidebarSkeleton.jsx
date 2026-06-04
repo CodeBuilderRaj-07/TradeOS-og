@@ -2,12 +2,12 @@ export default function SidebarSkeleton() {
 
   return (
 
-    <aside className="fixed left-0 top-0 flex h-screen w-[220px] flex-col border-r border-white/5 bg-[#050816] p-4">
+    <aside className="fixed left-0 top-0 flex h-screen w-[220px] flex-col border-r border-border bg-background p-4">
 
       {/* Logo */}
       <div className="mb-10 flex items-center gap-3">
 
-        <div className="skeleton h-12 w-12 rounded-2xl" />
+        <div className="skeleton h-12 w-12 rounded-lg" />
 
         <div>
 
@@ -27,7 +27,7 @@ export default function SidebarSkeleton() {
 
             <div
               key={index}
-              className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3"
+              className="flex items-center gap-3 rounded-lg border border-border bg-card/20 px-4 py-3"
             >
 
               <div className="skeleton h-10 w-10 rounded-xl" />
@@ -46,7 +46,7 @@ export default function SidebarSkeleton() {
 
         <div className="flex items-center gap-3">
 
-          <div className="skeleton h-12 w-12 rounded-2xl" />
+          <div className="skeleton h-12 w-12 rounded-lg" />
 
           <div className="flex-1">
 

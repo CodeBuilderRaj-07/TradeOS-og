@@ -2,26 +2,26 @@ package com.TradeOS.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.security.Key;
 import java.util.Collections;
 
+@Component
 public class JwtFilter extends OncePerRequestFilter {
 
-    private static final String SECRET =
-            "tradeossecretkeytradeossecretkey123456";
+    private final JwtUtil jwtUtil;
 
-    private static final Key KEY =
-            Keys.hmacShaKeyFor(SECRET.getBytes());
+    public JwtFilter(JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+    }
 
     @Override
     protected void doFilterInternal(
@@ -32,10 +32,11 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
 
-        // PUBLIC ROUTES
-        if (path.equals("/api/auth/login") ||
-                path.equals("/api/auth/register")) {
-
+        if (path.equals("/") ||
+                path.equals("/api/auth/login") ||
+                path.equals("/api/auth/register") ||
+                path.equals("/api/auth/forgot-password") ||
+                path.equals("/api/auth/reset-password")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -44,7 +45,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (authHeader == null ||
                 !authHeader.startsWith("Bearer ")) {
-
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Missing Token");
             return;
@@ -53,9 +53,8 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = authHeader.substring(7);
 
         try {
-
             Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(KEY)
+                    .setSigningKey(jwtUtil.getKey())
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
@@ -75,7 +74,6 @@ public class JwtFilter extends OncePerRequestFilter {
             request.setAttribute("email", email);
 
         } catch (Exception e) {
-
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Invalid Token");
             return;

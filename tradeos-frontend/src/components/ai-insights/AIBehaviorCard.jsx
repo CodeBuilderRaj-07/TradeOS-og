@@ -1,15 +1,18 @@
 import { Activity }
   from "lucide-react";
 
+import GlassPanel
+  from "@/components/ui/GlassPanel";
+
 export default function AIBehaviorCard() {
 
   return (
 
-    <div className="<GlassPanel /> p-6 backdrop-blur-2xl">
+    <GlassPanel className="p-6 backdrop-blur-2xl">
 
       <div className="flex items-center gap-3">
 
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-400">
+        <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-purple-500/10 text-purple-400">
 
           <Activity size={18} />
 
@@ -17,13 +20,13 @@ export default function AIBehaviorCard() {
 
         <div>
 
-          <h3 className="text-lg font-bold text-white">
+          <h3 className="text-lg font-bold text-foreground">
 
             Behavioral Analysis
 
           </h3>
 
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-muted-foreground">
 
             Execution psychology insights
 
@@ -35,21 +38,11 @@ export default function AIBehaviorCard() {
 
       <div className="mt-6 space-y-4">
 
-        <div className="rounded-2xl border border-white/5 bg-[#0B1120]/70 p-4">
+        <div className="rounded-lg border border-border bg-card/60 p-4">
 
-          <p className="text-sm text-zinc-300 leading-7">
+          <p className="text-sm text-muted-foreground leading-7">
 
-            You perform significantly better during structured market sessions with lower emotional volatility.
-
-          </p>
-
-        </div>
-
-        <div className="rounded-2xl border border-white/5 bg-[#0B1120]/70 p-4">
-
-          <p className="text-sm text-zinc-300 leading-7">
-
-            High-frequency entries after consecutive losses reduce long-term consistency.
+            Not enough behavioral data. Log more trades to receive psychology insights.
 
           </p>
 
@@ -57,6 +50,6 @@ export default function AIBehaviorCard() {
 
       </div>
 
-    </div>
+    </GlassPanel>
   );
 }

@@ -92,6 +92,35 @@ export const removeUser =
     );
   };
 
+/* Avatar */
+const AVATAR_KEY =
+  "tradeos_avatar";
+
+export const getAvatar =
+  () => {
+
+    return localStorage.getItem(
+      AVATAR_KEY
+    );
+  };
+
+export const setAvatar =
+  (dataUrl) => {
+
+    localStorage.setItem(
+      AVATAR_KEY,
+      dataUrl
+    );
+  };
+
+export const removeAvatar =
+  () => {
+
+    localStorage.removeItem(
+      AVATAR_KEY
+    );
+  };
+
 /* Clear Auth */
 export const clearAuth =
   () => {
@@ -101,4 +130,6 @@ export const clearAuth =
     removeRole();
 
     removeUser();
+
+    removeAvatar();
   };

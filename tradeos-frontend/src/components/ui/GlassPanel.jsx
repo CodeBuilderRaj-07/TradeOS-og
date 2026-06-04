@@ -1,45 +1,20 @@
 import { motion } from "framer-motion";
 
-import {
-  hoverLift,
-} from "@/animations/hover";
-
 export default function GlassPanel({
   children,
   className = "",
+  glow,
 }) {
-
   return (
-
     <motion.div
-
-      {...hoverLift}
-
-      className={`
-
-        relative overflow-hidden
-        rounded-3xl
-        border border-white/5
-        bg-white/[0.03]
-        backdrop-blur-2xl
-        transition-all duration-300
-
-        hover:border-blue-500/10
-        hover:shadow-[0_0_40px_rgba(37,99,235,0.08)]
-
-        ${className}
-      `}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className={`hover-lift ${
+        glow === "blue" ? "glow-blue" : glow === "green" ? "glow-green" : glow === "red" ? "glow-red" : ""
+      } glass ${className}`}
     >
-
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 transition-opacity duration-500 hover:opacity-100" />
-
-      <div className="relative z-10">
-
-        {children}
-
-      </div>
-
+      {children}
     </motion.div>
   );
 }

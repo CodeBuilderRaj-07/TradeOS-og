@@ -4,17 +4,20 @@ import { ShieldCheck }
 import InsightItem
   from "./InsightItem";
 
+import GlassPanel
+  from "@/components/ui/GlassPanel";
+
 export default function StreakAnalyticsCard({
   streaks,
 }) {
 
   return (
 
-    <div className="<GlassPanel /> p-6 backdrop-blur-2xl">
+    <GlassPanel className="p-6 backdrop-blur-2xl">
 
       <div className="flex items-center gap-3">
 
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-green-500/10 text-green-400">
+        <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-success/10 text-green-400">
 
           <ShieldCheck size={18} />
 
@@ -22,13 +25,13 @@ export default function StreakAnalyticsCard({
 
         <div>
 
-          <h3 className="text-lg font-bold text-white">
+          <h3 className="text-lg font-bold text-foreground">
 
             Streak Analytics
 
           </h3>
 
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-muted-foreground">
 
             Trading consistency tracking
 
@@ -64,6 +67,6 @@ export default function StreakAnalyticsCard({
 
       </div>
 
-    </div>
+    </GlassPanel>
   );
 }

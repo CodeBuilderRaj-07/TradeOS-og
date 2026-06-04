@@ -2,14 +2,14 @@ export default function TradeCardSkeleton() {
 
   return (
 
-    <div className="<GlassPanel /> p-6">
+    <div className="glass p-6">
 
       <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
 
         {/* Left */}
         <div className="flex items-center gap-4">
 
-          <div className="skeleton h-14 w-14 rounded-2xl" />
+          <div className="skeleton h-14 w-14 rounded-lg" />
 
           <div>
 
@@ -43,9 +43,9 @@ export default function TradeCardSkeleton() {
         {/* Right Action */}
         <div className="flex items-center gap-3">
 
-          <div className="skeleton h-10 w-24 rounded-2xl" />
+          <div className="skeleton h-10 w-24 rounded-lg" />
 
-          <div className="skeleton h-12 w-12 rounded-2xl" />
+          <div className="skeleton h-12 w-12 rounded-lg" />
 
         </div>
 

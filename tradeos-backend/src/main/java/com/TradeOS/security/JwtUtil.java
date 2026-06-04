@@ -3,27 +3,43 @@ package com.TradeOS.security;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PostConstruct;
 import java.security.Key;
+import java.util.Base64;
 import java.util.Date;
 
+@Component
 public class JwtUtil {
 
-    private static final String SECRET =
-            "tradeossecretkeytradeossecretkey123456";
+    @Value("${jwt.secret}")
+    private String secret;
 
-    private static final Key KEY =
-            Keys.hmacShaKeyFor(SECRET.getBytes());
+    private Key key;
 
-    public static String generateToken(String email) {
+    @PostConstruct
+    public void init() {
+        byte[] keyBytes = secret.getBytes();
+        if (keyBytes.length < 32) {
+            keyBytes = Keys.secretKeyFor(SignatureAlgorithm.HS256).getEncoded();
+        }
+        this.key = Keys.hmacShaKeyFor(keyBytes);
+    }
 
+    public String generateToken(String email) {
         return Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(
                         new Date(System.currentTimeMillis() + 86400000)
                 )
-                .signWith(KEY, SignatureAlgorithm.HS256)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    public Key getKey() {
+        return key;
     }
 }

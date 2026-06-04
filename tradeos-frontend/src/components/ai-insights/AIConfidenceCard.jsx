@@ -5,7 +5,7 @@ export default function AIConfidenceCard() {
 
   return (
 
-    <div className="relative overflow-hidden rounded-3xl border border-green-500/10 bg-green-500/[0.05] p-6 backdrop-blur-2xl">
+    <div className="relative overflow-hidden rounded-lg border border-success/10 bg-success/[0.05] p-6 backdrop-blur-2xl">
 
       <div className="absolute right-[-50px] top-[-50px] h-40 w-40 rounded-full bg-green-500/10 blur-3xl" />
 
@@ -13,7 +13,7 @@ export default function AIConfidenceCard() {
 
         <div className="flex items-center gap-3">
 
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-green-500/10 text-green-400">
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-success/10 text-green-400">
 
             <Brain size={18} />
 
@@ -21,13 +21,13 @@ export default function AIConfidenceCard() {
 
           <div>
 
-            <h3 className="text-lg font-bold text-white">
+            <h3 className="text-lg font-bold text-foreground">
 
               AI Confidence
 
             </h3>
 
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-muted-foreground">
 
               Prediction engine accuracy
 
@@ -37,15 +37,15 @@ export default function AIConfidenceCard() {
 
         </div>
 
-        <h1 className="mt-8 text-5xl font-black tracking-tight text-green-400">
+        <h1 className="mt-8 text-5xl font-black tracking-tight text-muted-foreground">
 
-          92%
+          0%
 
         </h1>
 
-        <p className="mt-5 text-sm leading-7 text-zinc-300">
+        <p className="mt-5 text-sm leading-7 text-muted-foreground">
 
-          Current AI models show strong statistical confidence based on historical execution behavior and live trade performance.
+          No data available yet. Complete more trades to generate AI confidence analysis.
 
         </p>
 

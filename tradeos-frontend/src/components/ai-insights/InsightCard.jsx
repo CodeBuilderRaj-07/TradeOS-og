@@ -7,11 +7,11 @@ export default function InsightCard({
 
   return (
 
-    <div className="rounded-3xl border border-white/5 bg-[#0B1120]/70 p-5 transition-all duration-300 hover:border-blue-500/10 hover:bg-[#0F172A]">
+    <div className="rounded-lg border border-border bg-card/60 p-5 transition-all duration-300 hover:border-primary/10 hover:bg-muted">
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
-        <h3 className="text-lg font-semibold text-white">
+        <h3 className="text-lg font-semibold text-foreground">
 
           {insight.title}
 
@@ -23,7 +23,7 @@ export default function InsightCard({
 
       </div>
 
-      <p className="mt-5 max-w-4xl text-sm leading-7 text-zinc-300">
+      <p className="mt-5 max-w-4xl text-sm leading-7 text-muted-foreground">
 
         {insight.description}
 

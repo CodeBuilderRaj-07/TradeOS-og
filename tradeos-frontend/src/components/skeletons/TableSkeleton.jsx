@@ -7,7 +7,7 @@ export default function TableSkeleton({
     <div className="overflow-hidden <GlassPanel />">
 
       {/* Header */}
-      <div className="grid grid-cols-5 gap-4 border-b border-white/5 p-5">
+      <div className="grid grid-cols-5 gap-4 border-b border-border p-5">
 
         {[...Array(5)].map(
           (_, index) => (
@@ -28,7 +28,7 @@ export default function TableSkeleton({
 
           <div
             key={index}
-            className="grid grid-cols-5 gap-4 border-b border-white/5 p-5"
+            className="grid grid-cols-5 gap-4 border-b border-border p-5"
           >
 
             {[...Array(5)].map(

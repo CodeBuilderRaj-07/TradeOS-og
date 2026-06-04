@@ -1,21 +1,23 @@
+import GlassPanel from "@/components/ui/GlassPanel";
+
 export default function EmptyTrades() {
 
   return (
 
-    <div className="<GlassPanel /> p-14 text-center backdrop-blur-2xl">
+    <GlassPanel className="p-14 text-center">
 
-      <h2 className="text-3xl font-bold text-white">
+      <h2 className="text-3xl font-bold text-foreground">
 
         No Open Trades
 
       </h2>
 
-      <p className="mt-4 text-zinc-500">
+      <p className="mt-4 text-muted-foreground">
 
         Your active positions will appear here.
 
       </p>
 
-    </div>
+    </GlassPanel>
   );
 }

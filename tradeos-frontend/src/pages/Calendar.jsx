@@ -1,584 +1,244 @@
-import React, {
-  useEffect,
-  useState,
-} from "react";
-
+import React, { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-
-import {
-  Flame,
-  TrendingUp,
-  AlertTriangle,
-  Activity,
-} from "lucide-react";
-
+import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import GlassPanel from "@/components/ui/GlassPanel";
+import CalendarSkeleton from "@/components/skeletons/CalendarSkeleton";
+import { pageTransition } from "@/animations/page";
+import { staggerContainer, staggerItem } from "@/animations/stagger";
 import API from "@/services/api";
+import { errorToast } from "@/services/toastService";
 
-import GlassPanel
-  from "@/components/ui/GlassPanel";
-
-import CalendarSkeleton
-  from "@/components/skeletons/CalendarSkeleton";
-
-import {
-  pageTransition,
-} from "@/animations/page";
-
-import {
-  staggerContainer,
-  staggerItem,
-} from "@/animations/stagger";
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 function Calendar() {
+  const [trades, setTrades] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [selectedDate, setSelectedDate] = useState(null);
 
-  const [calendarData,
-    setCalendarData] =
-    useState([]);
+  const fetchTrades = () => {
+    setLoading(true);
+    setLoadError(null);
+    API.get("/trades?limit=500")
+      .then((res) => setTrades(res.data || []))
+      .catch(() => { setLoadError("Failed to load trades"); errorToast("Failed to load trades"); })
+      .finally(() => setLoading(false));
+  };
 
-  const [loading,
-    setLoading] =
-    useState(true);
+  useEffect(() => { fetchTrades(); }, []);
 
-  useEffect(() => {
+  const { days, monthlyPnl, tradeMap } = useMemo(() => {
+    const firstDay = new Date(currentYear, currentMonth, 1);
+    const lastDay = new Date(currentYear, currentMonth + 1, 0);
+    const startDay = (firstDay.getDay() + 6) % 7;
+    const daysInMonth = lastDay.getDate();
 
-    fetchCalendar();
+    const days = [];
+    for (let i = 0; i < startDay; i++) {
+      days.push(null);
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      days.push(d);
+    }
 
-  }, []);
-
-  const fetchCalendar =
-    async () => {
-
-      try {
-
-        const response =
-          await API.get(
-            "/calendar"
-          );
-
-        setCalendarData(
-          response.data || []
-        );
-
-      } catch (error) {
-
-        console.error(
-          error
-        );
-
-      } finally {
-
-        setLoading(false);
+    const tradeMap = {};
+    let mPnl = 0;
+    trades.forEach((t) => {
+      const dateStr = t.updatedAt || t.createdAt;
+      if (!dateStr) return;
+      const d = new Date(dateStr);
+      if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+        const key = d.getDate();
+        if (!tradeMap[key]) tradeMap[key] = [];
+        tradeMap[key].push(t);
+        if (t.status !== "OPEN" && t.pnl != null) {
+          mPnl += t.pnl;
+        }
       }
-    };
+    });
 
-  /* Loading */
-  if (loading) {
+    return { days, monthlyPnl: mPnl, tradeMap };
+  }, [trades, currentMonth, currentYear]);
 
+  const goToPrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear((y) => y - 1);
+    } else {
+      setCurrentMonth((m) => m - 1);
+    }
+    setSelectedDate(null);
+  };
+
+  const goToNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear((y) => y + 1);
+    } else {
+      setCurrentMonth((m) => m + 1);
+    }
+    setSelectedDate(null);
+  };
+
+  const goToToday = () => {
+    const now = new Date();
+    setCurrentMonth(now.getMonth());
+    setCurrentYear(now.getFullYear());
+    setSelectedDate(now.getDate());
+  };
+
+  if (loading) return <CalendarSkeleton />;
+
+  if (loadError && trades.length === 0) {
     return (
-      <CalendarSkeleton />
+      <div className="space-y-6 max-w-[1200px] mx-auto">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Calendar</h1>
+        <div className="glass p-14 text-center">
+          <h2 className="text-xl font-bold text-foreground">Failed to load trades</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{loadError}</p>
+          <button onClick={fetchTrades} className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+            <RefreshCw size={16} /> Retry
+          </button>
+        </div>
+      </div>
     );
   }
 
-  /* Metrics */
-  const totalPnl =
-    calendarData.reduce(
-      (total, item) =>
-        total + item.pnl,
-      0
-    );
-
-  const winningDays =
-    calendarData.filter(
-      (item) => item.pnl > 0
-    ).length;
-
-  const losingDays =
-    calendarData.filter(
-      (item) => item.pnl < 0
-    ).length;
-
-  const bestDay =
-    Math.max(
-      ...calendarData.map(
-        (item) => item.pnl
-      ),
-      0
-    );
+  const selectedTrades = selectedDate ? tradeMap[selectedDate] || [] : [];
 
   return (
-
-    <motion.div
-
-      variants={pageTransition}
-
-      initial="initial"
-
-      animate="animate"
-
-      exit="exit"
-
-      className="space-y-6"
-    >
-
-      {/* Header */}
-      <motion.div
-        variants={staggerItem}
-        initial="hidden"
-        animate="show"
-      >
-
-        <div className="flex items-center justify-between">
-
-          <div>
-
-            <h1 className="text-4xl font-black tracking-tight text-white">
-
-              Trading Calendar
-
-            </h1>
-
-            <p className="mt-2 text-sm text-zinc-500">
-
-              Real daily trading performance
-
-            </p>
-
-          </div>
-
-        </div>
-
+    <motion.div variants={pageTransition} initial="initial" animate="animate" exit="exit" className="space-y-6 max-w-[1200px] mx-auto">
+      <motion.div variants={staggerItem} initial="hidden" animate="show">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Calendar</h1>
+        <p className="text-sm text-muted-foreground mt-1">Track your daily performance</p>
       </motion.div>
 
-      {/* Top Metrics */}
-      <motion.section
-
-        variants={staggerContainer}
-
-        initial="hidden"
-
-        animate="show"
-
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
-      >
-
-        <TopCard
-          title="TOTAL PNL"
-          value={`$${totalPnl.toFixed(
-            2
-          )}`}
-          green={totalPnl > 0}
-        />
-
-        <TopCard
-          title="WINNING DAYS"
-          value={winningDays}
-        />
-
-        <TopCard
-          title="LOSS DAYS"
-          value={losingDays}
-        />
-
-        <TopCard
-          title="BEST DAY"
-          value={`$${bestDay.toFixed(
-            2
-          )}`}
-          green
-        />
-
-      </motion.section>
-
-      {/* Main Grid */}
-      <motion.section
-
-        variants={staggerContainer}
-
-        initial="hidden"
-
-        animate="show"
-
-        transition={{
-          delayChildren: 0.1,
-        }}
-
-        className="grid grid-cols-1 gap-4 xl:grid-cols-[1.4fr_0.8fr]"
-      >
-
-        {/* Activity */}
-        <motion.div
-          variants={staggerItem}
-        >
-
-          <GlassPanel className="p-6">
-
-            {/* Header */}
-            <div className="mb-6 flex items-center justify-between">
-
-              <div>
-
-                <h3 className="text-xl font-bold text-white">
-
-                  Trading Activity
-
-                </h3>
-
-                <p className="mt-1 text-sm text-zinc-500">
-
-                  Real trade history grouped by date
-
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 xl:grid-cols-[1.4fr_0.8fr]">
+        {/* Calendar Grid */}
+        <motion.div variants={staggerItem}>
+          <GlassPanel className="p-5">
+            {/* Month Navigation */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <button onClick={goToPrevMonth} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground transition-colors">
+                  <ChevronLeft size={16} />
+                </button>
+                <button onClick={goToNextMonth} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground transition-colors">
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-bold text-foreground">{MONTHS[currentMonth]} {currentYear}</h3>
+                <p className={`text-sm font-mono font-semibold ${monthlyPnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                  {monthlyPnl >= 0 ? "+" : ""}${monthlyPnl.toFixed(2)}
                 </p>
-
               </div>
-
-              <div className="rounded-2xl border border-blue-500/10 bg-blue-500/10 px-4 py-2 text-xs font-semibold text-blue-400">
-
-                Live Backend Data
-
-              </div>
-
+              <button onClick={goToToday} className="rounded-lg border border-border bg-card px-4 py-2 text-xs font-medium text-foreground hover:bg-sidebar-accent transition-colors">
+                Today
+              </button>
             </div>
 
-            {/* Empty */}
-            {calendarData.length === 0 && (
+            {/* Day Headers */}
+            <div className="grid grid-cols-7 mb-2">
+              {DAYS.map((d) => (
+                <div key={d} className="text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground py-2">
+                  {d}
+                </div>
+              ))}
+            </div>
 
-              <div className="flex min-h-[240px] flex-col items-center justify-center rounded-3xl border border-white/5 bg-[#0B1120]/50 text-center">
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-1">
+              {days.map((day, i) => {
+                if (day === null) return <div key={`empty-${i}`} />;
+                const dayTrades = tradeMap[day] || [];
+                const dayPnl = dayTrades.reduce((sum, t) => {
+                  if (t.status !== "OPEN" && t.pnl != null) return sum + t.pnl;
+                  return sum;
+                }, 0);
+                const isToday = day === new Date().getDate() && currentMonth === new Date().getMonth() && currentYear === new Date().getFullYear();
+                const isSelected = day === selectedDate;
+                const hasPositive = dayPnl > 0;
+                const hasNegative = dayPnl < 0;
 
-                <h2 className="text-2xl font-bold text-white">
+                return (
+                  <button
+                    key={day}
+                    onClick={() => setSelectedDate(day)}
+                    className={`rounded-lg border p-2 text-left transition-all min-h-[72px] ${
+                      isSelected
+                        ? "border-primary bg-primary/5"
+                        : isToday
+                          ? "border-primary/30 bg-primary/[0.03]"
+                          : "border-border bg-background/30 hover:border-white/10"
+                    }`}
+                  >
+                    <p className={`text-xs font-medium ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                      {day}
+                    </p>
+                    {dayTrades.length > 0 && (
+                      <>
+                        <p className={`text-[10px] font-mono font-semibold mt-1 ${hasPositive ? "text-emerald-400" : hasNegative ? "text-red-400" : "text-muted-foreground"}`}>
+                          {dayPnl >= 0 ? "+" : ""}${Math.abs(dayPnl).toFixed(0)}
+                        </p>
+                        <p className="text-[9px] text-muted-foreground">{dayTrades.length} t</p>
+                      </>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </GlassPanel>
+        </motion.div>
 
-                  No Trading Activity
+        {/* Selected Day Panel */}
+        <motion.div variants={staggerItem} className="space-y-4">
+          <GlassPanel className="p-5">
+            <h3 className="text-lg font-bold text-foreground">
+              {selectedDate ? `${MONTHS[currentMonth]} ${selectedDate}` : "Select a day"}
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {selectedDate ? `${selectedTrades.length} trade${selectedTrades.length !== 1 ? "s" : ""}` : "Click on a day to view trades"}
+            </p>
 
-                </h2>
-
-                <p className="mt-3 text-sm text-zinc-500">
-
-                  Your daily pnl history will appear here.
-
-                </p>
-
+            {selectedDate && selectedTrades.length === 0 && (
+              <div className="mt-6 text-center py-8 text-sm text-muted-foreground">
+                No trades on this day
               </div>
-
             )}
 
-            {/* Grid */}
-            <motion.div
-
-              variants={staggerContainer}
-
-              initial="hidden"
-
-              animate="show"
-
-              className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
-            >
-
-              {calendarData.map(
-                (
-                  item,
-                  index
-                ) => (
-
-                  <motion.div
-                    key={index}
-                    variants={staggerItem}
-                  >
-
-                    <GlassPanel
-
-                      className={`
-
-                        min-h-[140px]
-                        p-5
-
-                        ${
-                          item.pnl < 0
-
-                            ? "border-red-500/10 bg-red-500/[0.03]"
-
-                            : "border-green-500/10 bg-green-500/[0.03]"
-                        }
-                      `}
-                    >
-
-                      <p className="text-xs font-medium text-zinc-500">
-
-                        {item.date}
-
-                      </p>
-
-                      <h2
-
-                        className={`
-
-                          mt-6 text-3xl font-black tracking-tight
-
-                          ${
-                            item.pnl < 0
-
-                              ? "text-red-400"
-
-                              : "text-green-400"
-                          }
-                        `}
-                      >
-
-                        $
-                        {item.pnl.toFixed(
-                          2
-                        )}
-
-                      </h2>
-
-                      <p
-
-                        className={`
-
-                          mt-3 text-xs font-semibold uppercase tracking-[0.18em]
-
-                          ${
-                            item.pnl < 0
-
-                              ? "text-red-400"
-
-                              : "text-green-400"
-                          }
-                        `}
-                      >
-
-                        {item.pnl < 0
-                          ? "Loss Day"
-                          : "Winning Day"}
-
-                      </p>
-
-                    </GlassPanel>
-
-                  </motion.div>
-                )
-              )}
-
-            </motion.div>
-
+            {selectedTrades.length > 0 && (
+              <div className="mt-4 space-y-2">
+                {selectedTrades.map((t) => {
+                  const isLong = (t.tradeType || "").toUpperCase() === "LONG" || (t.tradeType || "").toUpperCase() === "BUY";
+                  const pnl = t.pnl || 0;
+                  const isClosed = t.status !== "OPEN";
+                  return (
+                    <div key={t.id} className="rounded-lg border border-border bg-background/50 px-4 py-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs font-mono font-bold ${isLong ? "text-emerald-400" : "text-red-400"}`}>
+                            {isLong ? "▲" : "▼"}
+                          </span>
+                          <span className="text-sm font-semibold text-foreground">{t.symbol}</span>
+                        </div>
+                        <span className={`text-xs font-mono font-bold ${isClosed ? (pnl >= 0 ? "text-emerald-400" : "text-red-400") : "text-blue-400"}`}>
+                          {isClosed ? `${pnl >= 0 ? "+" : ""}$${pnl.toFixed(2)}` : "Open"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </GlassPanel>
-
         </motion.div>
-
-        {/* Right Side */}
-        <motion.div
-
-          variants={staggerContainer}
-
-          className="space-y-4"
-        >
-
-          {/* Insights */}
-          <motion.div
-            variants={staggerItem}
-          >
-
-            <GlassPanel className="p-6">
-
-              <div className="flex items-center gap-3">
-
-                <TrendingUp
-                  size={18}
-                  className="text-green-400"
-                />
-
-                <h3 className="text-lg font-bold text-white">
-
-                  Performance Insights
-
-                </h3>
-
-              </div>
-
-              <div className="mt-8 space-y-6">
-
-                <InsightItem
-                  title="Best Trading Day"
-                  value={`$${bestDay.toFixed(
-                    2
-                  )}`}
-                  green
-                />
-
-                <InsightItem
-                  title="Winning Days"
-                  value={winningDays}
-                />
-
-                <InsightItem
-                  title="Losing Days"
-                  value={losingDays}
-                />
-
-              </div>
-
-            </GlassPanel>
-
-          </motion.div>
-
-          {/* Risk */}
-          <motion.div
-            variants={staggerItem}
-          >
-
-            <GlassPanel className="p-6">
-
-              <div className="flex items-center gap-3">
-
-                <AlertTriangle
-                  size={18}
-                  className="text-red-400"
-                />
-
-                <h3 className="text-lg font-bold text-white">
-
-                  Risk Notice
-
-                </h3>
-
-              </div>
-
-              <div className="mt-6 rounded-2xl border border-red-500/10 bg-red-500/5 p-5 text-sm leading-7 text-zinc-300">
-
-                Calendar analytics are powered by real backend trading data and live account performance.
-
-              </div>
-
-            </GlassPanel>
-
-          </motion.div>
-
-          {/* Activity */}
-          <motion.div
-            variants={staggerItem}
-          >
-
-            <GlassPanel className="p-6">
-
-              <div className="flex items-center gap-3">
-
-                <Flame
-                  size={18}
-                  className="text-orange-400"
-                />
-
-                <h3 className="text-lg font-bold text-white">
-
-                  Trading Activity
-
-                </h3>
-
-              </div>
-
-              <h1 className="mt-6 text-5xl font-black tracking-tight text-green-400">
-
-                {calendarData.length}
-
-              </h1>
-
-              <p className="mt-4 text-sm leading-7 text-zinc-500">
-
-                Total active trading days recorded in your account history.
-
-              </p>
-
-            </GlassPanel>
-
-          </motion.div>
-
-        </motion.div>
-
-      </motion.section>
-
+      </motion.div>
     </motion.div>
   );
 }
 
-function TopCard({
-  title,
-  value,
-  green,
-}) {
-
-  return (
-
-    <motion.div
-      variants={staggerItem}
-    >
-
-      <GlassPanel className="p-5">
-
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-
-          {title}
-
-        </p>
-
-        <h2
-
-          className={`
-
-            mt-5 text-4xl font-black tracking-tight
-
-            ${
-              green
-                ? "text-green-400"
-                : "text-white"
-            }
-          `}
-        >
-
-          {value}
-
-        </h2>
-
-      </GlassPanel>
-
-    </motion.div>
-  );
-}
-
-function InsightItem({
-  title,
-  value,
-  green,
-}) {
-
-  return (
-
-    <div>
-
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-
-        {title}
-
-      </p>
-
-      <h2
-
-        className={`
-
-          mt-2 text-3xl font-black tracking-tight
-
-          ${
-            green
-              ? "text-green-400"
-              : "text-white"
-          }
-        `}
-      >
-
-        {value}
-
-      </h2>
-
-    </div>
-  );
-}
-
-export default React.memo(
-  Calendar
-);
+export default React.memo(Calendar);

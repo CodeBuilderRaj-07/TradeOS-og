@@ -4,53 +4,125 @@ import com.TradeOS.dto.LoginRequest;
 import com.TradeOS.dto.RegisterRequest;
 import com.TradeOS.entity.User;
 import com.TradeOS.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.TradeOS.security.JwtUtil;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.TradeOS.security.JwtUtil;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+
+    public UserService(UserRepository userRepository,
+                       BCryptPasswordEncoder passwordEncoder,
+                       JwtUtil jwtUtil) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
+    }
 
     public String registerUser(RegisterRequest request) {
-
-        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-
         User user = new User();
-
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-
+        user.setRole("TRADER");
         userRepository.save(user);
-
         return "User Registered Successfully";
     }
 
-    public String loginUser(LoginRequest request) {
+    public Map<String, Object> loginUser(LoginRequest request) {
+        User user = userRepository.findByEmail(request.getEmail());
+        Map<String, Object> result = new HashMap<>();
 
-    User user = userRepository.findByEmail(request.getEmail());
+        if (user == null) {
+            result.put("error", "User Not Found");
+            return result;
+        }
 
-    if (user == null) {
-        return "User Not Found";
+        boolean matches = passwordEncoder.matches(
+                request.getPassword(),
+                user.getPassword()
+        );
+
+        if (!matches) {
+            result.put("error", "Invalid Password");
+            return result;
+        }
+
+        String token = jwtUtil.generateToken(user.getEmail());
+
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("fullName", user.getFullName());
+        userMap.put("email", user.getEmail());
+        userMap.put("role", user.getRole());
+
+        result.put("token", token);
+        result.put("user", userMap);
+
+        return result;
     }
 
-    BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-
-    boolean matches = passwordEncoder.matches(
-            request.getPassword(),
-            user.getPassword()
-    );
-
-    if (!matches) {
-        return "Invalid Password";
+    public Map<String, Object> getUserProfile(String email) {
+        User user = userRepository.findByEmail(email);
+        Map<String, Object> profile = new HashMap<>();
+        if (user == null) {
+            profile.put("error", "User not found");
+            return profile;
+        }
+        profile.put("fullName", user.getFullName());
+        profile.put("email", user.getEmail());
+        profile.put("role", user.getRole());
+        return profile;
     }
 
-    String token = JwtUtil.generateToken(user.getEmail());
+    public String updateProfile(String email, String fullName) {
+        User user = userRepository.findByEmail(email);
+        if (user == null) return "User not found";
+        user.setFullName(fullName);
+        userRepository.save(user);
+        return "Profile updated successfully";
+    }
 
-    return token;
-}
+    public Map<String, Object> forgotPassword(String email) {
+        Map<String, Object> result = new HashMap<>();
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            result.put("error", "User not found with this email");
+            return result;
+        }
+
+        String resetToken = java.util.UUID.randomUUID().toString();
+        user.setResetToken(resetToken);
+        userRepository.save(user);
+
+        result.put("success", true);
+        result.put("message", "Reset token generated. In production, this would be emailed.");
+        result.put("resetToken", resetToken);
+        return result;
+    }
+
+    public Map<String, Object> resetPassword(String token, String newPassword) {
+        Map<String, Object> result = new HashMap<>();
+
+        User user = userRepository.findByResetToken(token);
+
+        if (user == null) {
+            result.put("error", "Invalid or expired reset token");
+            return result;
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setResetToken(null);
+        userRepository.save(user);
+
+        result.put("success", true);
+        result.put("message", "Password reset successfully");
+        return result;
+    }
 }

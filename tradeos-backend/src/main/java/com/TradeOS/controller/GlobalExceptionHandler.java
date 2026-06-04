@@ -1,53 +1,33 @@
 package com.TradeOS.controller;
 
+import com.TradeOS.dto.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(
-            MethodArgumentNotValidException.class
-    )
+    @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, String> handleValidationErrors(
-            MethodArgumentNotValidException ex
-    ) {
+    public ApiResponse<?> handleValidationErrors(MethodArgumentNotValidException ex) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .map(e -> e.getField() + ": " + e.getDefaultMessage())
+                .collect(Collectors.joining("; "));
+        return ApiResponse.error(message);
+    }
 
-        Map<String, String> errors =
-                new HashMap<>();
-
-        ex.getBindingResult()
-                .getFieldErrors()
-                .forEach(error ->
-
-                        errors.put(
-                                error.getField(),
-                                error.getDefaultMessage()
-                        )
-                );
-
-        return errors;
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<?> handleIllegalArgument(IllegalArgumentException ex) {
+        return ApiResponse.error(ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public Map<String, String> handleGeneralException(
-            Exception ex
-    ) {
-
-        Map<String, String> error =
-                new HashMap<>();
-
-        error.put(
-                "message",
-                ex.getMessage()
-        );
-
-        return error;
+    public ApiResponse<?> handleGeneralException(Exception ex) {
+        return ApiResponse.error("Internal server error: " + ex.getMessage());
     }
 }

@@ -10,28 +10,39 @@ const MAX_RECONNECTS = 5;
 const RECONNECT_DELAY =
   3000;
 
-const SOCKET_URL =
-  "wss://stream.binance.com:9443/ws/btcusdt@kline_1m";
+let currentStream = "";
 
 /* Connect Socket */
 export const connectMarketSocket =
   (
-    onCandleUpdate
+    onCandleUpdate,
+    streamSymbol = "btcusdt",
+    interval = "1m"
   ) => {
 
-    // Prevent Duplicate Connections
+    const stream = `${streamSymbol}@kline_${interval}`;
+
+    // Reuse if already connected to same stream
     if (
       socket &&
       socket.readyState ===
-        WebSocket.OPEN
+        WebSocket.OPEN &&
+      currentStream === stream
     ) {
-
       return;
     }
 
+    // Close existing if different stream
+    if (socket) {
+      socket.close();
+      socket = null;
+    }
+
+    currentStream = stream;
+
     socket =
       new WebSocket(
-        SOCKET_URL
+        `wss://stream.binance.com:9443/ws/${stream}`
       );
 
     socket.onopen =

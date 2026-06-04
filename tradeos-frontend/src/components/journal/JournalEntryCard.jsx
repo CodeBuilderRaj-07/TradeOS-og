@@ -4,7 +4,7 @@ export default function JournalEntryCard({
 
   return (
 
-    <div className="rounded-3xl border border-white/5 bg-[#0B1120]/70 p-5 transition-all duration-300 hover:border-blue-500/10 hover:bg-[#0F172A]">
+    <div className="rounded-lg border border-border bg-card/60 p-5 transition-all duration-300 hover:border-primary/10 hover:bg-muted">
 
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
 
@@ -13,13 +13,13 @@ export default function JournalEntryCard({
 
           <div className="flex flex-wrap items-center gap-3">
 
-            <h3 className="text-xl font-bold text-white">
+            <h3 className="text-xl font-bold text-foreground">
 
               {entry.symbol}
 
             </h3>
 
-            <span className="rounded-full border border-blue-500/10 bg-blue-500/10 px-3 py-1 text-[11px] font-semibold text-blue-400">
+            <span className="rounded-full border border-primary/10 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary">
 
               {entry.strategy}
 
@@ -39,7 +39,7 @@ export default function JournalEntryCard({
 
           </p>
 
-          <p className="mt-5 max-w-3xl text-sm leading-7 text-zinc-300">
+          <p className="mt-5 max-w-3xl text-sm leading-7 text-muted-foreground">
 
             {entry.notes}
 
@@ -62,7 +62,7 @@ export default function JournalEntryCard({
 
           </h2>
 
-          <p className="mt-2 text-xs text-zinc-500">
+          <p className="mt-2 text-xs text-muted-foreground">
 
             {
               entry.createdAt?.substring(

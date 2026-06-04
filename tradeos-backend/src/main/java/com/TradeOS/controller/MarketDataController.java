@@ -16,8 +16,23 @@ public class MarketDataController {
 
     @GetMapping("/prices")
     public Map<String, Object> getPrices() {
+        return liveMarketService.getMarketPrices();
+    }
 
-        return liveMarketService
-                .getMarketPrices();
+    @GetMapping("/price/{symbol}")
+    public Map<String, Object> getPriceForSymbol(
+            @PathVariable String symbol
+    ) {
+        Map<String, Object> result = new java.util.HashMap<>();
+        Double price = liveMarketService.getPriceForSymbol(symbol);
+        if (price != null) {
+            result.put("symbol", symbol.toUpperCase());
+            result.put("price", price);
+        } else {
+            result.put("symbol", symbol.toUpperCase());
+            result.put("price", null);
+            result.put("error", "Unable to fetch price for " + symbol);
+        }
+        return result;
     }
 }

@@ -1,475 +1,212 @@
-import {
-  useState,
-} from "react";
+import { useState } from "react";
+import { TrendingUp } from "lucide-react";
+import API from "@/services/api";
+import GlassPanel from "@/components/ui/GlassPanel";
+import { motion } from "framer-motion";
+import { staggerItem, staggerContainer } from "@/animations/stagger";
+import { successToast, errorToast } from "@/services/toastService";
+import { validateTradeForm } from "@/utils/tradeValidation";
 
-import {
-  TrendingUp,
-} from "lucide-react";
-
-import API from "../services/api";
 
 export default function CreateTrade() {
+  const [formData, setFormData] = useState({
+    symbol: "",
+    tradeType: "BUY",
+    entryPrice: "",
+    stopLoss: "",
+    takeProfit: "",
+    pnl: "",
+    status: "OPEN",
+  });
 
-  const [formData, setFormData] =
-    useState({
-
-      symbol: "",
-
-      tradeType: "BUY",
-
-      entryPrice: "",
-
-      stopLoss: "",
-
-      takeProfit: "",
-
-      pnl: "",
-
-      status: "OPEN",
-    });
-
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
-
-    setFormData({
-
-      ...formData,
-
-      [e.target.name]:
-        e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (errors[e.target.name]) {
+      setErrors((prev) => ({ ...prev, [e.target.name]: undefined }));
+    }
   };
 
-  const createTrade =
-    async () => {
+  const createTrade = async () => {
+    const { valid, errors: validationErrors } = validateTradeForm(formData);
+    if (!valid) {
+      setErrors(validationErrors);
+      return;
+    }
+    try {
+      setLoading(true);
+      await API.post("/trades/create", {
+        ...formData,
+        entryPrice: Number(formData.entryPrice),
+        stopLoss: Number(formData.stopLoss),
+        takeProfit: Number(formData.takeProfit),
+        pnl: Number(formData.pnl),
+      });
+      successToast("Trade created successfully");
+      setFormData({
+        symbol: "",
+        tradeType: "BUY",
+        entryPrice: "",
+        stopLoss: "",
+        takeProfit: "",
+        pnl: "",
+        status: "OPEN",
+      });
+      setErrors({});
+    } catch (error) {
+      errorToast(error?.response?.data?.message || "Failed to create trade");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      try {
-
-        setLoading(true);
-
-        await API.post(
-          "/trades/create",
-          {
-
-            ...formData,
-
-            entryPrice:
-              Number(
-                formData.entryPrice
-              ),
-
-            stopLoss:
-              Number(
-                formData.stopLoss
-              ),
-
-            takeProfit:
-              Number(
-                formData.takeProfit
-              ),
-
-            pnl:
-              Number(
-                formData.pnl
-              ),
-          }
-        );
-
-        alert(
-          "Trade Created Successfully"
-        );
-
-        setFormData({
-
-          symbol: "",
-
-          tradeType: "BUY",
-
-          entryPrice: "",
-
-          stopLoss: "",
-
-          takeProfit: "",
-
-          pnl: "",
-
-          status: "OPEN",
-        });
-
-      } catch (error) {
-
-        console.log(error);
-
-      } finally {
-
-        setLoading(false);
-      }
-    };
-
-  const risk =
-    Math.abs(
-      formData.entryPrice -
-      formData.stopLoss
-    );
-
-  const reward =
-    Math.abs(
-      formData.takeProfit -
-      formData.entryPrice
-    );
-
-  const rr =
-    risk > 0
-      ? (
-          reward / risk
-        ).toFixed(2)
-      : 0;
+  const risk = Math.abs(formData.entryPrice - formData.stopLoss);
+  const reward = Math.abs(formData.takeProfit - formData.entryPrice);
+  const rr = risk > 0 ? (reward / risk).toFixed(2) : 0;
 
   return (
-
-    <div>
-
-      <div>
-
-        <h1 className="page-title">
-          Create Trade
-        </h1>
-
-        <p className="page-subtitle">
-          Execute and track your positions
-        </p>
-
-      </div>
-
-      <div
-        className="panel glow-blue"
-        style={{
-          marginTop: "20px",
-
-          padding: "24px",
-
-          maxWidth: "760px",
-        }}
-      >
-
-        <div
-          style={{
-            display: "grid",
-
-            gridTemplateColumns:
-              "1fr 1fr",
-
-            gap: "14px",
-          }}
-        >
-
-          <Input
-            label="Symbol"
-            name="symbol"
-            value={formData.symbol}
-            onChange={handleChange}
-            placeholder="BTCUSD"
-          />
-
-          <Select
-            label="Trade Type"
-            name="tradeType"
-            value={
-              formData.tradeType
-            }
-            onChange={handleChange}
-          />
-
-          <Input
-            label="Entry Price"
-            name="entryPrice"
-            value={
-              formData.entryPrice
-            }
-            onChange={handleChange}
-            placeholder="65000"
-          />
-
-          <Input
-            label="Stop Loss"
-            name="stopLoss"
-            value={
-              formData.stopLoss
-            }
-            onChange={handleChange}
-            placeholder="64000"
-          />
-
-          <Input
-            label="Take Profit"
-            name="takeProfit"
-            value={
-              formData.takeProfit
-            }
-            onChange={handleChange}
-            placeholder="68000"
-          />
-
-          <Input
-            label="Current PNL"
-            name="pnl"
-            value={formData.pnl}
-            onChange={handleChange}
-            placeholder="420"
-          />
-
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      animate="show"
+      className="space-y-6"
+    >
+      <motion.div variants={staggerItem}>
+        <div className="flex flex-col gap-1">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
+            Create Trade
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Execute and track your positions
+          </p>
         </div>
+      </motion.div>
 
-        <div
-          className="panel"
-          style={{
-            marginTop: "20px",
-
-            padding: "18px",
-
-            background:
-              "rgba(15,23,42,0.8)",
-          }}
-        >
-
-          <div
-            style={{
-              display: "flex",
-
-              alignItems: "center",
-
-              gap: "10px",
-
-              marginBottom: "16px",
-            }}
-          >
-
-            <TrendingUp
-              size={18}
-              color="#22C55E"
+      <motion.div variants={staggerItem}>
+        <GlassPanel className="p-6 max-w-[760px]">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <InputField
+              label="Symbol"
+              name="symbol"
+              value={formData.symbol}
+              onChange={handleChange}
+              placeholder="BTCUSD"
+              error={errors.symbol}
             />
-
-            <h3
-              style={{
-                fontSize: "16px",
-
-                fontWeight: "700",
-              }}
-            >
-              Risk Analysis
-            </h3>
-
+            <SelectField
+              label="Trade Type"
+              name="tradeType"
+              value={formData.tradeType}
+              onChange={handleChange}
+            />
+            <InputField
+              label="Entry Price"
+              name="entryPrice"
+              value={formData.entryPrice}
+              onChange={handleChange}
+              placeholder="65000"
+              error={errors.entryPrice}
+            />
+            <InputField
+              label="Stop Loss"
+              name="stopLoss"
+              value={formData.stopLoss}
+              onChange={handleChange}
+              placeholder="64000"
+              error={errors.stopLoss}
+            />
+            <InputField
+              label="Take Profit"
+              name="takeProfit"
+              value={formData.takeProfit}
+              onChange={handleChange}
+              placeholder="68000"
+              error={errors.takeProfit}
+            />
+            <InputField
+              label="Current PNL"
+              name="pnl"
+              value={formData.pnl}
+              onChange={handleChange}
+              placeholder="420"
+              error={errors.pnl}
+            />
           </div>
 
-          <div
-            style={{
-              display: "grid",
-
-              gridTemplateColumns:
-                "repeat(3,1fr)",
-
-              gap: "14px",
-            }}
-          >
-
-            <Metric
-              title="Risk"
-              value={risk}
-            />
-
-            <Metric
-              title="Reward"
-              value={reward}
-            />
-
-            <Metric
-              title="R:R Ratio"
-              value={`1:${rr}`}
-              green
-            />
-
+          <div className="mt-5 rounded-lg border border-border bg-background/80 p-5">
+            <div className="mb-4 flex items-center gap-2.5">
+              <TrendingUp size={18} className="text-success" />
+              <h3 className="text-base font-bold text-foreground">
+                Risk Analysis
+              </h3>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <MetricItem title="Risk" value={risk} />
+              <MetricItem title="Reward" value={reward} />
+              <MetricItem title="R:R Ratio" value={`1:${rr}`} green />
+            </div>
           </div>
 
-        </div>
-
-        <button
-          onClick={createTrade}
-
-          disabled={loading}
-
-          style={{
-            width: "100%",
-
-            height: "52px",
-
-            marginTop: "20px",
-
-            border: "none",
-
-            borderRadius: "16px",
-
-            background:
-              "linear-gradient(135deg,#2563EB,#3B82F6)",
-
-            color: "white",
-
-            fontWeight: "700",
-
-            cursor: "pointer",
-
-            fontSize: "14px",
-
-            boxShadow:
-              "0 0 25px rgba(37,99,235,0.18)",
-          }}
-        >
-          {
-            loading
-
-              ? "Creating Trade..."
-
-              : "Create Trade"
-          }
-        </button>
-
-      </div>
-
-    </div>
+          <button
+            onClick={createTrade}
+            disabled={loading}
+            className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-bold text-primary-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {loading ? "Creating Trade..." : "Create Trade"}
+          </button>
+        </GlassPanel>
+      </motion.div>
+    </motion.div>
   );
 }
 
-function Input({
-  label,
-  ...props
-}) {
-
+function InputField({ label, error, ...props }) {
   return (
-
     <div>
-
-      <p
-        className="metric-title"
-        style={{
-          marginBottom: "10px",
-        }}
-      >
+      <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         {label}
       </p>
-
       <input
         {...props}
-
-        style={{
-          width: "100%",
-
-          height: "48px",
-
-          border: "none",
-
-          outline: "none",
-
-          borderRadius: "14px",
-
-          background: "#0F172A",
-
-          padding: "0 14px",
-
-          color: "white",
-
-          fontSize: "13px",
-        }}
+        className={`h-12 w-full rounded-lg border bg-background px-3.5 text-sm text-foreground outline-none transition-all placeholder:text-muted-foreground ${
+          error ? "border-red-500/50 focus:border-red-500" : "border-border focus:border-primary/30"
+        }`}
       />
-
+      {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
     </div>
   );
 }
 
-function Select(props) {
-
+function SelectField({ label, ...props }) {
   return (
-
     <div>
-
-      <p
-        className="metric-title"
-        style={{
-          marginBottom: "10px",
-        }}
-      >
-        Trade Type
+      <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        {label}
       </p>
-
       <select
         {...props}
-
-        style={{
-          width: "100%",
-
-          height: "48px",
-
-          border: "none",
-
-          outline: "none",
-
-          borderRadius: "14px",
-
-          background: "#0F172A",
-
-          padding: "0 14px",
-
-          color: "white",
-
-          fontSize: "13px",
-        }}
+        className="h-12 w-full rounded-lg border border-border bg-background px-3.5 text-sm text-foreground outline-none transition-all focus:border-primary/30"
       >
-
-        <option value="BUY">
-          BUY
-        </option>
-
-        <option value="SELL">
-          SELL
-        </option>
-
+        <option value="BUY">BUY</option>
+        <option value="SELL">SELL</option>
       </select>
-
     </div>
   );
 }
 
-function Metric({
-  title,
-  value,
-  green,
-}) {
-
+function MetricItem({ title, value, green }) {
   return (
-
     <div>
-
-      <p className="metric-title">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         {title}
       </p>
-
       <h2
-        style={{
-          marginTop: "8px",
-
-          fontSize: "24px",
-
-          fontWeight: "700",
-
-          color:
-            green
-              ? "#22C55E"
-              : "white",
-        }}
+        className={`mt-2 text-2xl font-bold ${green ? "text-success" : "text-foreground"}`}
       >
         {value}
       </h2>
-
     </div>
   );
 }

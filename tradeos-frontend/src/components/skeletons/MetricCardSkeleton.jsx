@@ -2,13 +2,13 @@ export default function MetricCardSkeleton() {
 
   return (
 
-    <div className="<GlassPanel /> p-5">
+    <div className="glass p-5">
 
       <div className="flex items-center justify-between">
 
         <div className="skeleton h-3 w-24 rounded-full" />
 
-        <div className="skeleton h-11 w-11 rounded-2xl" />
+        <div className="skeleton h-11 w-11 rounded-lg" />
 
       </div>
 

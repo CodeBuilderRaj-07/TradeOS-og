@@ -1,130 +1,54 @@
-import { motion } from "framer-motion";
-import React from "react";
-
-import {
-  staggerItem,
-} from "@/animations/stagger";
-
-import {
-  hoverLift,
-} from "@/animations/hover";
+import { motion } from "framer-motion"
+import React from "react"
 
 function MetricCard({
   title,
   value,
-  change,
   icon: Icon,
+  onClick,
+  trend,
+  delay = 0,
 }) {
+  const isUp = trend === "up"
+  const isDown = trend === "down"
 
   return (
-
-    <motion.div
-
-      variants={staggerItem}
-
-      initial="hidden"
-
-      animate="show"
-
-      {...hoverLift}
-
-      className="group relative overflow-hidden <GlassPanel /> p-5 backdrop-blur-2xl transition-all duration-300 hover:border-blue-500/10 hover:shadow-[0_0_40px_rgba(37,99,235,0.08)]"
+    <motion.button
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay }}
+      onClick={onClick}
+      className={`glass rounded-xl p-4 md:p-5 text-left w-full group transition-all duration-200 ${
+        onClick
+          ? "hover:border-white/10 hover:scale-[1.01] cursor-pointer active:scale-[0.99]"
+          : ""
+      }`}
     >
+      <div className="flex items-start justify-between mb-3">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          {title}
+        </span>
 
-      {/* Glow */}
-      <div className="absolute right-[-40px] top-[-40px] h-32 w-32 rounded-full bg-blue-500/10 blur-3xl transition-all duration-500 group-hover:bg-blue-500/20" />
-
-      {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-
-      <div className="relative z-10">
-
-        {/* Header */}
-        <div className="flex items-center justify-between">
-
-          <div>
-
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-
-              {title}
-
-            </p>
-
+        {Icon && (
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Icon className="w-4 h-4 text-primary" />
           </div>
-
-          <motion.div
-
-            whileHover={{
-              rotate: 6,
-              scale: 1.08,
-            }}
-
-            transition={{
-              duration: 0.2,
-            }}
-
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-blue-500/10 bg-blue-500/10 text-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.12)]"
-          >
-
-            <Icon size={18} />
-
-          </motion.div>
-
-        </div>
-
-        {/* Value */}
-        <motion.h2
-
-          initial={{
-            opacity: 0,
-            y: 6,
-          }}
-
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-
-          transition={{
-            delay: 0.1,
-            duration: 0.3,
-          }}
-
-          className="mt-6 text-3xl font-bold tracking-tight text-white"
-        >
-
-          {value}
-
-        </motion.h2>
-
-        {/* Change */}
-        <motion.p
-
-          initial={{
-            opacity: 0,
-          }}
-
-          animate={{
-            opacity: 1,
-          }}
-
-          transition={{
-            delay: 0.18,
-          }}
-
-          className="mt-2 text-xs font-medium text-green-400"
-        >
-
-          {change}
-
-        </motion.p>
-
+        )}
       </div>
 
-    </motion.div>
-  );
+      <p
+        className={`text-2xl md:text-3xl font-bold font-mono tracking-tight ${
+          isUp
+            ? "text-emerald-400"
+            : isDown
+              ? "text-red-400"
+              : "text-foreground"
+        }`}
+      >
+        {value}
+      </p>
+    </motion.button>
+  )
 }
 
-export default React.memo(
-  MetricCard
-);
+export default React.memo(MetricCard)
