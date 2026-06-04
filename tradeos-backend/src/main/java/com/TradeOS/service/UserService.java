@@ -26,6 +26,41 @@ public class UserService {
         this.jwtUtil = jwtUtil;
     }
 
+    public Map<String, Object> handleOAuthLogin(String provider, String providerId, String email, String name) {
+        Map<String, Object> result = new HashMap<>();
+
+        User user = userRepository.findByEmail(email);
+
+        if (user == null) {
+            user = new User();
+            user.setFullName(name != null ? name : email);
+            user.setEmail(email);
+            user.setPassword(null);
+            user.setRole("TRADER");
+            user.setAuthProvider(provider);
+            user.setProviderId(providerId);
+            userRepository.save(user);
+        } else {
+            if (user.getAuthProvider() == null) {
+                user.setAuthProvider(provider);
+                user.setProviderId(providerId);
+                userRepository.save(user);
+            }
+        }
+
+        String token = jwtUtil.generateToken(user.getEmail());
+
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("fullName", user.getFullName());
+        userMap.put("email", user.getEmail());
+        userMap.put("role", user.getRole());
+
+        result.put("token", token);
+        result.put("user", userMap);
+
+        return result;
+    }
+
     public String registerUser(RegisterRequest request) {
         User user = new User();
         user.setFullName(request.getFullName());

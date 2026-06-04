@@ -12,18 +12,15 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.io.IOException;
 import java.util.List;
 
 @Configuration
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
-    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
-    public SecurityConfig(JwtFilter jwtFilter, OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler) {
+    public SecurityConfig(JwtFilter jwtFilter) {
         this.jwtFilter = jwtFilter;
-        this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
     }
 
     @Bean
@@ -43,7 +40,7 @@ public class SecurityConfig {
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
-                                SessionCreationPolicy.IF_REQUIRED
+                                SessionCreationPolicy.STATELESS
                         )
                 )
                 .headers(headers -> headers
@@ -59,20 +56,9 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/",
                                 "/api/auth/**",
-                                "/api/health",
-                                "/oauth2/**",
-                                "/login/oauth2/**"
+                                "/api/health"
                         ).permitAll()
                         .anyRequest().authenticated()
-                )
-                .oauth2Login(oauth2 -> oauth2
-                        .successHandler(oAuth2LoginSuccessHandler)
-                        .failureHandler((request, response, exception) -> {
-                            try {
-                                response.sendRedirect("https://tradeos-frontend.onrender.com/oauth/callback?error=" +
-                                        java.net.URLEncoder.encode(exception.getClass().getSimpleName() + ": " + exception.getMessage(), java.nio.charset.StandardCharsets.UTF_8));
-                            } catch (IOException ignored) {}
-                        })
                 )
                 .addFilterBefore(
                         jwtFilter,

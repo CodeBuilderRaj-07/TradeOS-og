@@ -13,8 +13,11 @@ export default function OAuthCallback() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const token = searchParams.get("token");
+    const code = searchParams.get("code");
     const errorParam = searchParams.get("error");
+    const state = searchParams.get("state");
+    const savedState = sessionStorage.getItem("oauth_state");
+    sessionStorage.removeItem("oauth_state");
 
     if (errorParam) {
       setError(decodeURIComponent(errorParam));
@@ -22,27 +25,40 @@ export default function OAuthCallback() {
       return;
     }
 
-    if (!token) {
-      setError("No authentication token received");
+    if (!code) {
+      setError("No authorization code received");
+      setTimeout(() => navigate("/login"), 3000);
+      return;
+    }
+
+    if (state && savedState && state !== savedState) {
+      setError("State mismatch. Please try again.");
       setTimeout(() => navigate("/login"), 3000);
       return;
     }
 
     const completeLogin = async () => {
       try {
+        const response = await API.post("/auth/oauth/google", { code });
+        const data = response.data;
+
+        if (data.error) throw new Error(data.error);
+
+        const token = data.token;
+        const userData = data.user;
+        if (!token) throw new Error("No token received from server");
+
         setToken(token);
-        const response = await API.get("/auth/profile");
-        const userData = response.data;
+        if (userData) {
+          setUser(userData);
+          setRole(userData.role || "TRADER");
+          login({ user: userData, token });
+        }
 
-        if (userData.error) throw new Error(userData.error);
-
-        setUser(userData);
-        setRole(userData.role || "TRADER");
-        login({ user: userData, token });
         successToast("Signed in with Google");
         navigate("/");
       } catch (err) {
-        errorToast(err.message || "OAuth login failed");
+        errorToast(err.response?.data?.error || err.message || "OAuth login failed");
         setTimeout(() => navigate("/login"), 2000);
       }
     };
