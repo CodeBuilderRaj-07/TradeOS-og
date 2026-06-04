@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
-                .httpBasic(Customizer.withDefaults())
+                .httpBasic(httpBasic -> httpBasic.disable())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.IF_REQUIRED
@@ -66,6 +66,12 @@ public class SecurityConfig {
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oAuth2LoginSuccessHandler)
+                        .failureHandler((request, response, exception) -> {
+                            try {
+                                response.sendRedirect("https://tradeos-frontend.onrender.com/oauth/callback?error=" +
+                                        java.net.URLEncoder.encode(exception.getClass().getSimpleName() + ": " + exception.getMessage(), java.nio.charset.StandardCharsets.UTF_8));
+                            } catch (IOException ignored) {}
+                        })
                 )
                 .addFilterBefore(
                         jwtFilter,
