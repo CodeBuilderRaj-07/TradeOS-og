@@ -247,7 +247,7 @@ export default function AuthLayout({ children }) {
     intervalRef.current = setInterval(() => {
       setCandles((prev) =>
         prev.map((c, i) => {
-          const movement = (Math.random() - 0.5) * 14;
+          const movement = (Math.random() - 0.5) * 8;
           const newBodyH = Math.max(10, Math.min(100, c.bodyH + movement));
           const newBodyBottom = c.dir === "up"
             ? c.bodyBottom - movement * 0.3
@@ -272,16 +272,16 @@ export default function AuthLayout({ children }) {
 
       setLivePrices((prev) =>
         prev.map((p) => {
-          const delta = (Math.random() - 0.5) * 0.2;
+          const delta = (Math.random() - 0.5) * 0.1;
           const newChange = (parseFloat(p.change) + delta).toFixed(2);
           let side = p.side;
-          if (Math.random() < 0.01) {
+          if (Math.random() < 0.005) {
             side = side === "buy" ? "sell" : "buy";
           }
           return { ...p, change: newChange, side, id: Math.random() };
         })
       );
-    }, 3500);
+    }, 6000);
 
     return () => clearInterval(intervalRef.current);
   }, []);
@@ -509,7 +509,7 @@ export default function AuthLayout({ children }) {
         >
           <div
             className="flex h-full w-max items-center"
-            style={{ animation: "ticker-scroll 60s linear infinite" }}
+            style={{ animation: "ticker-scroll 120s linear infinite" }}
           >
             <div className="flex items-center">{tickerTape}</div>
             <div className="flex items-center">{tickerTape}</div>

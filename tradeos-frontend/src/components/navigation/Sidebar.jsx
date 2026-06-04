@@ -42,10 +42,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
         />
       )}
 
-      <motion.aside
-        initial={{ opacity: 0, x: -30 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.35 }}
+      <aside
         className={`fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300
         ${collapsed ? "w-[72px]" : "w-[240px]"}
         ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
@@ -130,7 +127,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
             {collapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
           </button>
         </div>
-      </motion.aside>
+      </aside>
     </>
   );
 }

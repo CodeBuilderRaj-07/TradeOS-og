@@ -16,7 +16,7 @@ export default function MainLayout({ children }) {
   const [aiChatOpen, setAiChatOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background text-foreground grid-bg">
+    <div className="h-screen flex overflow-hidden bg-background text-foreground grid-bg">
       <Sidebar
         collapsed={collapsed}
         setCollapsed={setCollapsed}
@@ -24,10 +24,10 @@ export default function MainLayout({ children }) {
         setMobileOpen={setMobileOpen}
       />
 
-      <div className={`min-h-screen flex flex-col transition-all duration-300 ${collapsed ? "lg:ml-[72px]" : "lg:ml-[240px]"}`}>
+      <div className={`flex flex-1 flex-col transition-all duration-300 ${collapsed ? "lg:ml-[72px]" : "lg:ml-[240px]"}`}>
         <Topbar setMobileOpen={setMobileOpen} onAiChatToggle={() => setAiChatOpen((p) => !p)} />
 
-        <main className="flex-1 p-4 md:p-6 pb-20 lg:pb-6 space-y-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 lg:pb-6 space-y-6">
           {children}
         </main>
       </div>
