@@ -31,6 +31,10 @@ services:
     region: oregon
     buildCommand: cd tradeos-frontend && npm ci && npm run build
     staticPublishPath: ./tradeos-frontend/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: VITE_API_URL
         value: https://tradeos-backend-twuw.onrender.com/api
