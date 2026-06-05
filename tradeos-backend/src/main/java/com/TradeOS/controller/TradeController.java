@@ -1,5 +1,6 @@
 package com.TradeOS.controller;
 
+import com.TradeOS.dto.ApiResponse;
 import com.TradeOS.dto.CloseTradeRequest;
 import com.TradeOS.dto.TradeRequest;
 import com.TradeOS.dto.UpdateTradeRequest;
@@ -7,6 +8,7 @@ import com.TradeOS.entity.Trade;
 import com.TradeOS.service.TradeService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -103,6 +105,19 @@ public class TradeController {
                 (String) httpRequest.getAttribute("email");
 
         return tradeService.getUserTrades(email);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getTradeById(
+            @PathVariable Long id,
+            HttpServletRequest httpRequest
+    ) {
+        String email = (String) httpRequest.getAttribute("email");
+        Trade trade = tradeService.getTradeById(id, email);
+        if (trade == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error("Trade not found"));
+        }
+        return ResponseEntity.ok(trade);
     }
 
     @GetMapping("/search")

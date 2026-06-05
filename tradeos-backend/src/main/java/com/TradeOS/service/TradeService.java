@@ -96,6 +96,10 @@ public class TradeService {
 
     }
 
+    public Trade getTradeById(Long tradeId, String email) {
+        return tradeRepository.findByIdAndUserEmail(tradeId, email);
+    }
+
     public String addTrade(
             TradeRequest request,
             String email
