@@ -52,7 +52,7 @@ function Strategies() {
     try {
       await API.post("/strategies", {
         ...newStrategy,
-        checklist: newStrategy.checklist.filter(Boolean),
+        checklist: JSON.stringify(newStrategy.checklist.filter(Boolean)),
       });
       setShowForm(false);
       setNewStrategy({ name: "", description: "", rules: "", checklist: [] });
@@ -192,6 +192,7 @@ function Strategies() {
         ) : (
           strategies.map((strategy) => {
             const isExpanded = expandedId === strategy.id;
+            const parsedChecklist = (() => { try { return JSON.parse(strategy.checklist || "[]"); } catch { return []; } })();
             return (
               <motion.div key={strategy.id} variants={staggerItem}>
                 <GlassPanel className="p-5">
@@ -233,11 +234,11 @@ function Strategies() {
                               <p className="text-sm text-foreground/80">{strategy.rules}</p>
                             </div>
                           )}
-                          {strategy.checklist && strategy.checklist.length > 0 && (
+                          {parsedChecklist.length > 0 && (
                             <div>
                               <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Pre-Trade Checklist</p>
                               <div className="space-y-1">
-                                {strategy.checklist.map((item, ci) => (
+                                {parsedChecklist.map((item, ci) => (
                                   <div key={ci} className="flex items-center gap-2 rounded-lg border border-border bg-background/30 px-3 py-2">
                                     <div className="h-4 w-4 rounded border border-muted-foreground/30" />
                                     <span className="text-sm text-foreground">{item}</span>
