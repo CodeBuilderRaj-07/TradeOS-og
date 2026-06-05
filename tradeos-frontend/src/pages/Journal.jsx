@@ -63,7 +63,7 @@ export default function Journal() {
         if (sk !== sf) return false;
       }
       if (directionFilter !== "All") {
-        const dir = (t.direction || t.tradeType || "").toLowerCase();
+        const dir = (t.tradeType || "").toLowerCase() === "buy" ? "long" : "short";
         if (dir !== directionFilter.toLowerCase()) return false;
       }
       if (sessionFilter !== "All Sessions") {
@@ -195,7 +195,7 @@ export default function Journal() {
       ) : (
         <div className="space-y-2">
           {paginated.map((trade, i) => {
-            const isLong = (trade.direction || trade.tradeType || "long").toLowerCase() === "long" || trade.tradeType === "BUY";
+            const isLong = trade.tradeType === "BUY";
             const sk = getStatusKey(trade.status);
             const pnl = trade.pnl;
             const isOpen = ["open", "tp_touched", "sl_touched", "be_touched"].includes(sk);

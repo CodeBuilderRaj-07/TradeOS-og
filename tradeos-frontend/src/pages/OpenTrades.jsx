@@ -179,7 +179,7 @@ export default function OpenTrades() {
                         </div>
                         <div>
                           <h3 className="text-lg font-bold text-foreground">{trade.symbol || trade.pair}</h3>
-                          <p className="text-xs text-muted-foreground capitalize">{trade.direction || trade.tradeType}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{trade.tradeType}</p>
                         </div>
                       </div>
                       <div className={`text-right ${pnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
