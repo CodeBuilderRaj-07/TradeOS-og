@@ -25,6 +25,8 @@ public class StrategyController {
     public String createStrategy(@RequestBody Strategy strategy, HttpServletRequest request) {
         String email = (String) request.getAttribute("email");
         strategy.setUserEmail(email);
+        if (strategy.getType() == null) strategy.setType("manual");
+        if (strategy.getStatus() == null) strategy.setStatus("ACTIVE");
         strategyRepository.save(strategy);
         return "Strategy created successfully";
     }

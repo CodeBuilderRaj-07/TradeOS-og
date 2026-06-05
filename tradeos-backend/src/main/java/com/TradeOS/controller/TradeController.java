@@ -112,12 +112,20 @@ public class TradeController {
             @PathVariable Long id,
             HttpServletRequest httpRequest
     ) {
-        String email = (String) httpRequest.getAttribute("email");
-        Trade trade = tradeService.getTradeById(id, email);
-        if (trade == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error("Trade not found"));
+        try {
+            String email = (String) httpRequest.getAttribute("email");
+            if (email == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("User not authenticated"));
+            }
+            Trade trade = tradeService.getTradeById(id, email);
+            if (trade == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error("Trade not found"));
+            }
+            return ResponseEntity.ok(trade);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Error loading trade: " + e.getMessage()));
         }
-        return ResponseEntity.ok(trade);
     }
 
     @GetMapping("/search")

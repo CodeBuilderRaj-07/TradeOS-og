@@ -20,6 +20,13 @@ public class Strategy {
 
     private String userEmail;
 
+    private String description;
+
+    private String rules;
+
+    @Column(columnDefinition = "TEXT")
+    private String checklist;
+
     public Long getId() {
         return id;
     }
@@ -63,4 +70,13 @@ public class Strategy {
     public void setUserEmail(String userEmail) {
         this.userEmail = userEmail;
     }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public String getRules() { return rules; }
+    public void setRules(String rules) { this.rules = rules; }
+
+    public String getChecklist() { return checklist; }
+    public void setChecklist(String checklist) { this.checklist = checklist; }
 }

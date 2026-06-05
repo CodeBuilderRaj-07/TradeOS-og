@@ -156,14 +156,16 @@ public class TradeService {
         }
 
         trade.setSymbol(request.getSymbol());
-
         trade.setEntryPrice(request.getEntryPrice());
-
         trade.setStopLoss(request.getStopLoss());
-
         trade.setTakeProfit(request.getTakeProfit());
-
+        trade.setPositionSize(request.getPositionSize());
         trade.setNotes(request.getNotes());
+        trade.setStrategy(request.getStrategy());
+        trade.setSession(request.getSession());
+        trade.setTimeframe(request.getTimeframe());
+        trade.setConfidence(request.getConfidence());
+        trade.setRiskPct(request.getRiskPct());
 
         tradeRepository.save(trade);
 

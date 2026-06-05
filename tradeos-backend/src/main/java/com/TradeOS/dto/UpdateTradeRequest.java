@@ -25,6 +25,8 @@ public class UpdateTradeRequest {
 
     private String confidence;
 
+    private double positionSize;
+
     public String getSymbol() { return symbol; }
     public void setSymbol(String symbol) { this.symbol = symbol; }
 
@@ -54,4 +56,7 @@ public class UpdateTradeRequest {
 
     public String getConfidence() { return confidence; }
     public void setConfidence(String confidence) { this.confidence = confidence; }
+
+    public double getPositionSize() { return positionSize; }
+    public void setPositionSize(double positionSize) { this.positionSize = positionSize; }
 }
