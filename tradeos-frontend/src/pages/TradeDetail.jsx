@@ -47,11 +47,13 @@ export default function TradeDetail() {
         }
       })
       .catch((err) => {
-        if (err?.response?.status === 404) {
+        const status = err?.response?.status;
+        const msg = err?.response?.data?.error || err?.response?.data?.message || err.message || "";
+        if (status === 404) {
           setError("Trade not found");
         } else {
-          setError("Failed to load trade details");
-          errorToast("Failed to load trade details");
+          setError("Failed to load trade details" + (msg ? ": " + msg : ""));
+          errorToast("Failed to load trade details" + (msg ? ": " + msg : ""));
         }
       })
       .finally(() => setLoading(false));
