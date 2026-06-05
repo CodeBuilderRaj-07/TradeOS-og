@@ -1,14 +1,17 @@
 package com.TradeOS.dto;
 
+import jakarta.validation.constraints.Positive;
+
 public class CloseTradeRequest {
 
-    private double exitPrice;
+    @Positive(message = "Exit price must be positive")
+    private Double exitPrice;
 
-    public double getExitPrice() {
+    public Double getExitPrice() {
         return exitPrice;
     }
 
-    public void setExitPrice(double exitPrice) {
+    public void setExitPrice(Double exitPrice) {
         this.exitPrice = exitPrice;
     }
 }

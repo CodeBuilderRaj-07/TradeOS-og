@@ -252,7 +252,7 @@ public class TradeController {
     @PutMapping("/{id}")
     public String updateTrade(
             @PathVariable Long id,
-            @RequestBody UpdateTradeRequest request,
+            @RequestBody @jakarta.validation.Valid UpdateTradeRequest request,
             HttpServletRequest httpRequest
     ) {
 
@@ -269,7 +269,7 @@ public class TradeController {
     @PutMapping("/{id}/close")
     public String closeTrade(
             @PathVariable Long id,
-            @RequestBody CloseTradeRequest request,
+            @RequestBody @jakarta.validation.Valid CloseTradeRequest request,
             HttpServletRequest httpRequest
     ) {
 

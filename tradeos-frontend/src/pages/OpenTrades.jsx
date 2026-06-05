@@ -271,7 +271,7 @@ export default function OpenTrades() {
                             <Scissors size={14} />
                           </button>
                           <button
-                            onClick={() => closeTrade(trade.id)}
+                            onClick={() => navigate(`/trade/${trade.id}`)}
                             className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
                             title="Close Trade"
                           >

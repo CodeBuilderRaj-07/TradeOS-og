@@ -20,8 +20,10 @@ public class Strategy {
 
     private String userEmail;
 
+    @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(columnDefinition = "TEXT")
     private String rules;
 
     @Column(columnDefinition = "TEXT")

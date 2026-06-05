@@ -30,14 +30,17 @@ export function useOpenTrades() {
   });
 
   const closeMutation = useMutation({
-    mutationFn: ({ id, closePrice }) =>
-      API.put(`/trades/${id}/close`, { exitPrice: Number(closePrice) }),
+    mutationFn: ({ id, closePrice }) => {
+      const payload = closePrice !== undefined ? { exitPrice: Number(closePrice) } : {};
+      return API.put(`/trades/${id}/close`, payload);
+    },
     onSuccess: () => {
       successToast("Trade closed");
       invalidate();
     },
-    onError: () => {
-      errorToast("Failed to close trade");
+    onError: (err) => {
+      const msg = err?.response?.data?.error || err?.response?.data?.message || "Failed to close trade";
+      errorToast(msg);
     },
   });
 

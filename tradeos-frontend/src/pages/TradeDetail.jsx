@@ -111,6 +111,7 @@ export default function TradeDetail() {
 
   const handleClose = async () => {
     if (!closePrice) return;
+    setClosing(true);
     const prev = trade;
     setTrade((t) => t ? { ...t, status: "manual_close", exitPrice: closePrice } : t);
     setShowClose(false);
@@ -125,6 +126,8 @@ export default function TradeDetail() {
     } catch {
       setTrade(prev);
       errorToast("Failed to close trade");
+    } finally {
+      setClosing(false);
     }
   };
 

@@ -32,8 +32,14 @@ public class StrategyController {
     }
 
     @DeleteMapping("/{id}")
-    public String deleteStrategy(@PathVariable Long id) {
-        strategyRepository.deleteById(id);
+    public String deleteStrategy(@PathVariable Long id, HttpServletRequest request) {
+        String email = (String) request.getAttribute("email");
+        Strategy strategy = strategyRepository.findById(id).orElse(null);
+        if (strategy == null) return "Strategy not found";
+        if (!strategy.getUserEmail().equals(email)) {
+            return "You do not have permission to delete this strategy";
+        }
+        strategyRepository.delete(strategy);
         return "Strategy deleted";
     }
 }

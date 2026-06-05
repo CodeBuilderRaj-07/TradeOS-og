@@ -188,6 +188,10 @@ public class TradeService {
             return "Trade Not Found";
         }
 
+        if (request.getExitPrice() == null) {
+            return "Exit price is required";
+        }
+
         trade.setExitPrice(request.getExitPrice());
 
         double pnl;

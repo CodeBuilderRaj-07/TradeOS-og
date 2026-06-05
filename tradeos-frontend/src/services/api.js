@@ -13,7 +13,7 @@ let redirecting = false;
 
 /* Navigate without full page reload */
 export function emitNavigate(path) {
-  window.dispatchEvent(new CustomEvent("app-navigate", { detail: { path } }));
+  window.dispatchEvent(new CustomEvent("app-navigate", { detail: path }));
 }
 
 /* Axios Instance */
@@ -59,7 +59,7 @@ API.interceptors.response.use(
       redirecting = true;
       clearAuth();
       errorToast("Session expired. Please login again.");
-      window.dispatchEvent(new CustomEvent("app-navigate", { detail: "/login" }));
+      emitNavigate("/login");
     }
 
     if (status === 403) {
