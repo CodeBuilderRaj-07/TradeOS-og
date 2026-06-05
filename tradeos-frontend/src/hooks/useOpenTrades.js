@@ -31,7 +31,7 @@ export function useOpenTrades() {
 
   const closeMutation = useMutation({
     mutationFn: ({ id, closePrice }) =>
-      API.put(`/trades/${id}/close`, { closePrice: Number(closePrice) }),
+      API.put(`/trades/${id}/close`, { exitPrice: Number(closePrice) }),
     onSuccess: () => {
       successToast("Trade closed");
       invalidate();

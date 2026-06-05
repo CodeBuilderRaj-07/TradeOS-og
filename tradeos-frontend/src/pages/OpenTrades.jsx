@@ -151,7 +151,7 @@ export default function OpenTrades() {
           <>
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {paginated.map((trade, i) => {
-              const isLong = (trade.direction || "long").toLowerCase() === "long";
+              const isLong = (trade.tradeType || "BUY") === "BUY";
               const banner = getStatusBanner(trade.status);
               const pnl = trade.pnl || 0;
               return (

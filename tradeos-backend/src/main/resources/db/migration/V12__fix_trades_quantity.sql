@@ -1,0 +1,1 @@
+ALTER TABLE trades ALTER COLUMN quantity DROP NOT NULL;

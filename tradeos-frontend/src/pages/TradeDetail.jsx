@@ -114,7 +114,7 @@ export default function TradeDetail() {
     setShowClose(false);
     try {
       await API.put(`/trades/${id}/close`, {
-        closePrice: Number(closePrice),
+        exitPrice: Number(closePrice),
         emotions: selectedEmotions,
         mistakes: selectedMistakes,
       });

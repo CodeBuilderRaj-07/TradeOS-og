@@ -1,6 +1,5 @@
 package com.TradeOS.service;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -10,55 +9,46 @@ import java.util.Map;
 @Service
 public class LiveMarketService {
 
-    @Value("${twelvedata.api.key}")
-    private String apiKey;
+    private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${gold.api.key}")
-    private String goldApiKey;
-
-    private final RestTemplate restTemplate =
-            new RestTemplate();
-
-    private static final Map<String, String> CRYPTO_EXCHANGES = new HashMap<>();
+    private static final Map<String, String> CRYPTO_TO_BINANCE = new HashMap<>();
     static {
-        CRYPTO_EXCHANGES.put("BTCUSDT", "BTCUSDT");
-        CRYPTO_EXCHANGES.put("ETHUSD", "ETHUSDT");
-        CRYPTO_EXCHANGES.put("BNBUSD", "BNBUSDT");
-        CRYPTO_EXCHANGES.put("SOLUSD", "SOLUSDT");
-        CRYPTO_EXCHANGES.put("XRPUSD", "XRPUSDT");
+        CRYPTO_TO_BINANCE.put("BTCUSD", "BTCUSDT");
+        CRYPTO_TO_BINANCE.put("ETHUSD", "ETHUSDT");
+        CRYPTO_TO_BINANCE.put("BNBUSD", "BNBUSDT");
+        CRYPTO_TO_BINANCE.put("SOLUSD", "SOLUSDT");
+        CRYPTO_TO_BINANCE.put("XRPUSD", "XRPUSDT");
+    }
+
+    private static final Map<String, String> FOREX_TO_ERAPI = new HashMap<>();
+    static {
+        FOREX_TO_ERAPI.put("EURUSD", "EUR");
+        FOREX_TO_ERAPI.put("GBPUSD", "GBP");
+        FOREX_TO_ERAPI.put("USDJPY", "JPY");
+        FOREX_TO_ERAPI.put("USDCHF", "CHF");
+        FOREX_TO_ERAPI.put("AUDUSD", "AUD");
+        FOREX_TO_ERAPI.put("NZDUSD", "NZD");
+        FOREX_TO_ERAPI.put("USDCAD", "CAD");
+        FOREX_TO_ERAPI.put("EURGBP", "EUR");
+        FOREX_TO_ERAPI.put("EURJPY", "EUR");
+        FOREX_TO_ERAPI.put("GBPJPY", "GBP");
     }
 
     public Double getPriceForSymbol(String symbol) {
         try {
             String upper = symbol.toUpperCase();
 
-            if ("XAUUSD".equals(upper) && goldApiKey != null && !goldApiKey.isBlank() && !goldApiKey.contains("YOUR_")) {
-                try {
-                    String goldUrl;
-                    if (goldApiKey.contains("goldapi")) {
-                        goldUrl = "https://www.goldapi.io/api/XAU/USD";
-                        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-                        headers.set("x-access-token", goldApiKey);
-                        org.springframework.http.HttpEntity<?> entity = new org.springframework.http.HttpEntity<>(headers);
-                        org.springframework.http.ResponseEntity<Map> response = restTemplate.exchange(
-                                goldUrl, org.springframework.http.HttpMethod.GET, entity, Map.class
-                        );
-                        Map goldResponse = response.getBody();
-                        if (goldResponse != null && goldResponse.containsKey("price")) {
-                            return Double.parseDouble(goldResponse.get("price").toString());
-                        }
-                    } else {
-                        goldUrl = "https://api.goldprice.dev/v1/prices?symbols=XAU-USD-SPOT";
-                        Map goldResponse = restTemplate.getForObject(goldUrl, Map.class);
-                        if (goldResponse != null && goldResponse.containsKey("price")) {
-                            return Double.parseDouble(goldResponse.get("price").toString());
-                        }
-                    }
-                } catch (Exception ignored) {}
+            // 1. Gold / Silver via gold-api.com (free, no key)
+            if ("XAUUSD".equals(upper)) {
+                return fetchMetalPrice("XAU");
+            }
+            if ("XAGUSD".equals(upper)) {
+                return fetchMetalPrice("XAG");
             }
 
-            if (CRYPTO_EXCHANGES.containsKey(upper)) {
-                String binanceSymbol = CRYPTO_EXCHANGES.get(upper);
+            // 2. Crypto via Binance (free, no key)
+            if (CRYPTO_TO_BINANCE.containsKey(upper)) {
+                String binanceSymbol = CRYPTO_TO_BINANCE.get(upper);
                 String url = "https://api.binance.com/api/v3/ticker/price?symbol=" + binanceSymbol;
                 Map response = restTemplate.getForObject(url, Map.class);
                 if (response != null && response.get("price") != null) {
@@ -66,11 +56,9 @@ public class LiveMarketService {
                 }
             }
 
-            String twelveDataSymbol = formatForTwelveData(upper);
-            String url = "https://api.twelvedata.com/price?symbol=" + twelveDataSymbol + "&apikey=" + apiKey;
-            Map response = restTemplate.getForObject(url, Map.class);
-            if (response != null && response.get("price") != null) {
-                return Double.parseDouble(response.get("price").toString());
+            // 3. Forex via exchange-rate API (free, no key)
+            if (FOREX_TO_ERAPI.containsKey(upper)) {
+                return fetchForexRate(upper);
             }
 
             return null;
@@ -79,31 +67,45 @@ public class LiveMarketService {
         }
     }
 
-    private String formatForTwelveData(String symbol) {
-        if (symbol.length() >= 6) {
-            int split = symbol.length() - 3;
-            return symbol.substring(0, split) + "/" + symbol.substring(split);
-        }
-        return symbol;
+    private Double fetchMetalPrice(String metal) {
+        try {
+            String url = "https://api.gold-api.com/price/" + metal;
+            Map response = restTemplate.getForObject(url, Map.class);
+            if (response != null && response.containsKey("price")) {
+                return Double.parseDouble(response.get("price").toString());
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private Double fetchForexRate(String pair) {
+        try {
+            String base = pair.substring(0, 3);
+            String quote = pair.substring(3);
+            String url = "https://open.er-api.com/v6/latest/" + base;
+            Map response = restTemplate.getForObject(url, Map.class);
+            if (response != null && response.containsKey("rates")) {
+                Map<String, Object> rates = (Map<String, Object>) response.get("rates");
+                if (rates != null && rates.containsKey(quote)) {
+                    return Double.parseDouble(rates.get(quote).toString());
+                }
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 
     public Map<String, Object> getMarketPrices() {
-
-        Map<String, Object> result =
-                new HashMap<>();
-
-        String[] symbols = {"XAUUSD", "EURUSD", "BTCUSDT"};
+        Map<String, Object> result = new HashMap<>();
+        String[] symbols = {"XAUUSD", "EURUSD", "BTCUSD"};
         for (String sym : symbols) {
             Double price = getPriceForSymbol(sym);
             if (price != null) {
                 result.put(sym, price);
             }
         }
-
         if (result.isEmpty()) {
             result.put("error", "Failed to fetch any market prices");
         }
-
         return result;
     }
 }

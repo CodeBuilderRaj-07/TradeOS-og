@@ -14,7 +14,6 @@ import {
   PanelLeftClose,
   PanelLeft,
   X,
-  DollarSign,
 } from "lucide-react";
 
 import { NavLink } from "react-router-dom";
@@ -52,9 +51,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
           {/* LOGO + COLLAPSE */}
           <div className={`mb-8 flex items-center ${collapsed ? "justify-center" : "justify-between"}`}>
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-500 text-primary-foreground shadow-lg shadow-blue-500/20">
-                <DollarSign size={20} />
-              </div>
+              <img src="/logo.png" alt="TradeOS" className="h-10 w-10 shrink-0 rounded-xl object-contain" />
               {!collapsed && (
                 <div>
                   <h1 className="text-lg font-bold tracking-tight text-sidebar-foreground">TradeOS</h1>

@@ -18,13 +18,34 @@ const PIP_VALUES = {
   EURUSD: 0.0001, GBPUSD: 0.0001, USDJPY: 0.01, USDCHF: 0.0001,
   AUDUSD: 0.0001, NZDUSD: 0.0001, USDCAD: 0.0001,
   EURGBP: 0.0001, EURJPY: 0.01, GBPJPY: 0.01,
-  XAUUSD: 0.01, XAGUSD: 0.001,
-  USOIL: 0.01, UKOIL: 0.01,
-  BTCUSD: 0.1, ETHUSD: 0.01, BNBUSD: 0.01, SOLUSD: 0.001, XRPUSD: 0.0001,
+  XAUUSD: 0.1, XAGUSD: 0.01,
+  USOIL: 0.1, UKOIL: 0.1,
+  BTCUSD: 1.0, ETHUSD: 0.1, BNBUSD: 0.1, SOLUSD: 0.1, XRPUSD: 0.001,
 };
+
+const DECIMALS = {
+  EURUSD: 4, GBPUSD: 4, USDJPY: 3, USDCHF: 4,
+  AUDUSD: 4, NZDUSD: 4, USDCAD: 4,
+  EURGBP: 4, EURJPY: 3, GBPJPY: 3,
+  XAUUSD: 3, XAGUSD: 3,
+  USOIL: 3, UKOIL: 3,
+  BTCUSD: 2, ETHUSD: 3, BNBUSD: 3, SOLUSD: 3, XRPUSD: 4,
+};
+
+const MIN_SL_PIPS = 5;
+const MIN_TP_PIPS = 10;
 
 function getPipValue(pair) {
   return PIP_VALUES[pair] || 0.0001;
+}
+
+function getDecimals(pair) {
+  return DECIMALS[pair] || 4;
+}
+
+function formatPrice(price, pair) {
+  const d = getDecimals(pair);
+  return Number(price).toFixed(d);
 }
 
 function pipsBetween(price1, price2, pair) {
@@ -83,8 +104,8 @@ export function useTradeExecution() {
       const res = await API.get(`/market/price/${formData.pair}`);
       const price = res.data?.price;
       if (price) {
-        setFormData((prev) => ({ ...prev, entryPrice: String(price) }));
-        successToast(`Market price fetched: ${price}`);
+        setFormData((prev) => ({ ...prev, entryPrice: formatPrice(price, formData.pair) }));
+        successToast(`Market price fetched: ${formatPrice(price, formData.pair)}`);
       } else {
         errorToast(res.data?.error || "Could not fetch price");
       }
@@ -97,19 +118,21 @@ export function useTradeExecution() {
 
   const validate = () => {
     const errs = {};
+    if (!formData.pair) errs.pair = "Select a pair";
+    if (!formData.entryPrice) errs.entryPrice = "Entry price is required";
     const pip = getPipValue(formData.pair);
 
     if (sl && entry && pip) {
       const slInPips = pipsBetween(entry, sl, formData.pair);
-      if (slInPips < 50) {
-        errs.stopLoss = `SL must be at least 50 pips (currently ${Math.round(slInPips)} pips)`;
+      if (slInPips < MIN_SL_PIPS) {
+        errs.stopLoss = `SL must be at least ${MIN_SL_PIPS} pips (currently ${Math.round(slInPips)} pips)`;
       }
     }
 
     if (tp && entry && pip) {
       const tpInPips = pipsBetween(entry, tp, formData.pair);
-      if (tpInPips < 150) {
-        errs.takeProfit = `TP must be at least 150 pips (currently ${Math.round(tpInPips)} pips)`;
+      if (tpInPips < MIN_TP_PIPS) {
+        errs.takeProfit = `TP must be at least ${MIN_TP_PIPS} pips (currently ${Math.round(tpInPips)} pips)`;
       }
     }
 
@@ -139,7 +162,7 @@ export function useTradeExecution() {
         session: formData.session,
         strategy: formData.strategy,
         timeframe: formData.timeframe,
-        confidence: Number(formData.confidence) || 7,
+        confidence: String(formData.confidence || "7"),
         notes: formData.notes,
       };
 
@@ -164,7 +187,8 @@ export function useTradeExecution() {
       setErrors({});
     } catch (error) {
       console.error(error);
-      errorToast(error.response?.data || "Failed to execute trade");
+      const msg = error.response?.data?.message || error.response?.data?.error || "Failed to execute trade";
+      errorToast(msg);
     } finally {
       setLoading(false);
     }

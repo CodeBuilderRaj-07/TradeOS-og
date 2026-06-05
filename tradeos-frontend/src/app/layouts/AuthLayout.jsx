@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { useMemo, useState, useEffect, useRef } from "react";
-import { DollarSign } from "lucide-react";
 
 const tickers = [
   { symbol: "BTC/USD", change: "+2.41", side: "buy" },
@@ -622,15 +621,14 @@ export default function AuthLayout({ children }) {
           >
             {/* Logo */}
             <div className="mb-8 flex flex-col items-center">
-              <div
-                className="flex h-14 w-14 items-center justify-center rounded-2xl text-xl font-black text-white"
+              <img
+                src="/logo.png"
+                alt="TradeOS"
+                className="h-16 w-16 rounded-2xl object-contain"
                 style={{
-                  background: "linear-gradient(135deg, rgba(37,99,235,1), rgba(59,130,246,1))",
                   boxShadow: "0 0 40px rgba(37,99,235,0.25), 0 0 80px rgba(37,99,235,0.1)",
                 }}
-              >
-                <DollarSign size={24} />
-              </div>
+              />
               <h1 className="mt-4 text-2xl font-black tracking-tight text-white/90">
                 TradeOS
               </h1>

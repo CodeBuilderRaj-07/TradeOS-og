@@ -6,13 +6,11 @@ public class UpdateTradeRequest {
 
     private String symbol;
 
-    @Min(value = 1, message = "Entry price must be positive")
+    @Min(value = 0, message = "Entry price must be positive")
     private double entryPrice;
 
-    @Min(value = 1, message = "Stop loss must be positive")
     private double stopLoss;
 
-    @Min(value = 1, message = "Take profit must be positive")
     private double takeProfit;
 
     private String notes;
