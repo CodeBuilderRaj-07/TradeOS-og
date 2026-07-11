@@ -17,7 +17,9 @@ export default function OAuthCallback() {
     const errorParam = searchParams.get("error");
     const state = searchParams.get("state");
     const savedState = sessionStorage.getItem("oauth_state");
+    const provider = sessionStorage.getItem("oauth_provider") || "google";
     sessionStorage.removeItem("oauth_state");
+    sessionStorage.removeItem("oauth_provider");
 
     if (errorParam) {
       setError(decodeURIComponent(errorParam));
@@ -39,7 +41,8 @@ export default function OAuthCallback() {
 
     const completeLogin = async () => {
       try {
-        const response = await API.post("/auth/oauth/google", { code });
+        const endpoint = provider === "github" ? "/auth/oauth/github" : "/auth/oauth/google";
+        const response = await API.post(endpoint, { code });
         const data = response.data;
 
         if (data.error) throw new Error(data.error);
@@ -55,7 +58,7 @@ export default function OAuthCallback() {
           login({ user: userData, token });
         }
 
-        successToast("Signed in with Google");
+        successToast(`Signed in with ${provider === "github" ? "GitHub" : "Google"}`);
         navigate("/");
       } catch (err) {
         errorToast(err.response?.data?.error || err.message || "OAuth login failed");

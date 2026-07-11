@@ -28,6 +28,12 @@ public class AuthController {
     @Value("${GOOGLE_CLIENT_SECRET}")
     private String googleClientSecret;
 
+    @Value("${GITHUB_CLIENT_ID:}")
+    private String githubClientId;
+
+    @Value("${GITHUB_CLIENT_SECRET:}")
+    private String githubClientSecret;
+
     @Value("${FRONTEND_URL:https://tradeos-frontend.onrender.com}")
     private String frontendUrl;
 
@@ -127,6 +133,95 @@ public class AuthController {
             }
 
             return userService.handleOAuthLogin("GOOGLE", providerId, email, name);
+        } catch (Exception e) {
+            result.put("error", "OAuth failed: " + e.getMessage());
+            return result;
+        }
+    }
+
+    @PostMapping("/oauth/github")
+    public Map<String, Object> githubOAuth(@RequestBody Map<String, String> body) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            String code = body.get("code");
+            if (code == null || code.isBlank()) {
+                result.put("error", "Authorization code is required");
+                return result;
+            }
+
+            if (githubClientId == null || githubClientId.isBlank()) {
+                result.put("error", "GitHub sign in not configured");
+                return result;
+            }
+
+            MultiValueMap<String, String> tokenBody = new LinkedMultiValueMap<>();
+            tokenBody.add("client_id", githubClientId);
+            tokenBody.add("client_secret", githubClientSecret);
+            tokenBody.add("code", code);
+            tokenBody.add("redirect_uri", frontendUrl + "/oauth/callback");
+
+            Map tokenResponse = webClient.post()
+                    .uri("https://github.com/login/oauth/access_token")
+                    .header("Accept", "application/json")
+                    .body(BodyInserters.fromFormData(tokenBody))
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+
+            if (tokenResponse == null || tokenResponse.get("access_token") == null) {
+                result.put("error", "Failed to exchange authorization code");
+                return result;
+            }
+
+            String accessToken = (String) tokenResponse.get("access_token");
+
+            Map userInfo = webClient.get()
+                    .uri("https://api.github.com/user")
+                    .header("Authorization", "Bearer " + accessToken)
+                    .header("Accept", "application/json")
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+
+            if (userInfo == null) {
+                result.put("error", "Failed to fetch user info from GitHub");
+                return result;
+            }
+
+            String githubId = String.valueOf(userInfo.get("id"));
+            String name = (String) userInfo.get("name");
+            String email = (String) userInfo.get("email");
+
+            if (email == null) {
+                Map emailsResponse = webClient.get()
+                        .uri("https://api.github.com/user/emails")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Accept", "application/json")
+                        .retrieve()
+                        .bodyToMono(Map.class)
+                        .block();
+
+                if (emailsResponse instanceof java.util.List) {
+                    java.util.List<Map<String, Object>> emails = (java.util.List<Map<String, Object>>) emailsResponse;
+                    for (Map<String, Object> e : emails) {
+                        if (Boolean.TRUE.equals(e.get("primary")) && Boolean.TRUE.equals(e.get("verified"))) {
+                            email = (String) e.get("email");
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (email == null) {
+                result.put("error", "Email not provided by GitHub");
+                return result;
+            }
+
+            if (name == null || name.isBlank()) {
+                name = (String) userInfo.get("login");
+            }
+
+            return userService.handleOAuthLogin("GITHUB", githubId, email, name);
         } catch (Exception e) {
             result.put("error", "OAuth failed: " + e.getMessage());
             return result;

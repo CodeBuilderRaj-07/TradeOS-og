@@ -23,6 +23,10 @@ services:
         value: placeholder-replace-with-real-key
       - key: GOLD_API_KEY
         value: free
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
 
   - type: web
     name: tradeos-frontend
@@ -38,3 +42,7 @@ services:
     envVars:
       - key: VITE_API_URL
         value: https://tradeos-backend.onrender.com/api
+      - key: VITE_GITHUB_CLIENT_ID
+        sync: false
+      - key: VITE_GOOGLE_CLIENT_ID
+        value: 160687474803-bmc3h4f32k1a3n3b77i182ke4sgjhk6r.apps.googleusercontent.com
