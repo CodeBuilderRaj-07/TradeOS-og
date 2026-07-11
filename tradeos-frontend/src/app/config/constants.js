@@ -1,17 +1,9 @@
 export const APP_NAME = "TradeOS";
 export const APP_DESCRIPTION = "Professional Trading Workspace";
-export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
-export const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8080/ws/market";
 
 export const TRADE_TYPES = {
   BUY: "BUY",
   SELL: "SELL",
-};
-
-export const ROLES = {
-  ADMIN: "ADMIN",
-  TRADER: "TRADER",
-  ANALYST: "ANALYST",
 };
 
 export const PNL_COLORS = {

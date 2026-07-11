@@ -47,8 +47,6 @@ export const useAIInsightsStore =
 
         } catch (error) {
 
-          console.error(error);
-
           set({
             loading: false,
           });

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const tickers = [
   { symbol: "BTC/USD", change: "+2.41", side: "buy" },

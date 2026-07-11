@@ -186,7 +186,6 @@ export function useTradeExecution() {
       });
       setErrors({});
     } catch (error) {
-      console.error(error);
       const msg = error.response?.data?.message || error.response?.data?.error || "Failed to execute trade";
       errorToast(msg);
     } finally {

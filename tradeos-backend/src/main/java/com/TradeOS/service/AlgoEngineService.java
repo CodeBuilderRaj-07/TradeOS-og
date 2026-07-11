@@ -8,6 +8,8 @@ import com.TradeOS.repository.AlgoExecutionRepository;
 import com.TradeOS.repository.AlgoStrategyRepository;
 import com.TradeOS.repository.TradeRepository;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,6 +17,7 @@ import java.util.List;
 
 @Service
 public class AlgoEngineService {
+    private static final Logger log = LoggerFactory.getLogger(AlgoEngineService.class);
 
     private final AlgoStrategyRepository algoRepository;
     private final AlgoExecutionRepository executionRepository;
@@ -55,7 +58,7 @@ public class AlgoEngineService {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("AlgoEngine error for strategy " + algo.getId() + ": " + e.getMessage());
+                log.error("AlgoEngine error for strategy {}: {}", algo.getId(), e.getMessage());
             }
         }
     }

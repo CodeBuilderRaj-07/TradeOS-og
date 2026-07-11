@@ -48,10 +48,6 @@ export const connectMarketSocket =
     socket.onopen =
       () => {
 
-        console.log(
-          "✅ Binance WebSocket Connected"
-        );
-
         reconnectAttempts = 0;
       };
 
@@ -100,28 +96,16 @@ export const connectMarketSocket =
 
         } catch (error) {
 
-          console.error(
-            "❌ WebSocket Parse Error:",
-            error
-          );
         }
       };
 
     socket.onerror =
       (error) => {
 
-        console.error(
-          "❌ WebSocket Error:",
-          error
-        );
       };
 
     socket.onclose =
       () => {
-
-        console.warn(
-          "⚠️ WebSocket Closed"
-        );
 
         socket = null;
 
@@ -136,11 +120,6 @@ export const connectMarketSocket =
           reconnectTimeout =
             setTimeout(
               () => {
-
-                console.log(
-
-                  `🔄 Reconnecting WebSocket (${reconnectAttempts}/${MAX_RECONNECTS})`
-                );
 
                 connectMarketSocket(
                   onCandleUpdate

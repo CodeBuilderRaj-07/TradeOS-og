@@ -1,35 +1,13 @@
 import { motion } from "framer-motion";
 
 import {
-  LayoutDashboard,
-  List,
-  BookOpen,
-  Zap,
-  Bot,
-  BarChart3,
-  Calendar,
-  Brain,
-  Layers3,
-  Settings,
   PanelLeftClose,
   PanelLeft,
   X,
 } from "lucide-react";
 
 import { NavLink } from "react-router-dom";
-
-const menuItems = [
-  { title: "Dashboard", icon: LayoutDashboard, path: "/" },
-  { title: "Open Trades", icon: List, path: "/trades/open" },
-  { title: "Journal", icon: BookOpen, path: "/journal" },
-  { title: "New Trade", icon: Zap, path: "/new-trade" },
-  { title: "Algo Trading", icon: Bot, path: "/algo-trading" },
-  { title: "Analytics", icon: BarChart3, path: "/analytics" },
-  { title: "Calendar", icon: Calendar, path: "/calendar" },
-  { title: "AI Insights", icon: Brain, path: "/ai-insights" },
-  { title: "Strategies", icon: Layers3, path: "/strategies" },
-  { title: "Settings", icon: Settings, path: "/settings" },
-];
+import { menuItems } from "@/app/config/navigation";
 
 export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) {
   return (
