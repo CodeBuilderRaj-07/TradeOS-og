@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/animations/stagger"
 import { User, Plus, Trash2, Upload, Check, Star, LogOut, Shield, Sun, Moon, Bell, Volume2, VolumeX } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 import API from "@/services/api";
 import { successToast, errorToast } from "@/services/toastService";
 import { useAuthStore } from "@/store/authStore";
@@ -19,6 +20,8 @@ export default function Settings() {
   const { theme, toggleTheme } = useThemeStore();
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -42,7 +45,16 @@ export default function Settings() {
       .finally(() => setLoading(false));
   }, []);
 
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.name.trim()) errors.name = "Account name is required";
+    if (!formData.initialBalance || Number(formData.initialBalance) <= 0) errors.initialBalance = "Enter a valid balance";
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleCreate = async () => {
+    if (!validateForm()) return;
     try {
       await API.post("/trading-accounts", {
         ...formData,
@@ -55,6 +67,7 @@ export default function Settings() {
       successToast("Account created");
       setShowForm(false);
       setFormData({ name: "", broker: "MT4", type: "live", initialBalance: "", currentBalance: "", currency: "USD", leverage: "1:100", maxDailyLoss: "", maxTradesPerDay: "", defaultRisk: 1 });
+      setFormErrors({});
       const res = await API.get("/trading-accounts");
       setAccounts(res.data || []);
     } catch {
@@ -67,6 +80,7 @@ export default function Settings() {
       await API.delete(`/trading-accounts/${id}`);
       successToast("Account deleted");
       setAccounts((prev) => prev.filter((a) => a.id !== id));
+      setConfirmDelete(null);
     } catch {
       errorToast("Failed to delete account");
     }
@@ -103,6 +117,22 @@ export default function Settings() {
     }
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6 max-w-[1000px] mx-auto">
+        <div className="skeleton h-10 w-48 rounded-xl" />
+        <div className="skeleton mt-3 h-4 w-64 rounded-full" />
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.2fr_0.8fr] mt-6">
+          <div className="glass p-6"><div className="skeleton h-64 w-full rounded-lg" /></div>
+          <div className="space-y-5">
+            <div className="glass p-6"><div className="skeleton h-32 w-full rounded-lg" /></div>
+            <div className="glass p-6"><div className="skeleton h-48 w-full rounded-lg" /></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-6 max-w-[1000px] mx-auto">
@@ -141,7 +171,8 @@ export default function Settings() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Account Name</label>
-                    <input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Main FTMO" className="h-11 w-full rounded-lg border border-border bg-background/70 px-4 text-sm outline-none focus:border-primary/30" />
+                    <input value={formData.name} onChange={(e) => { setFormData({ ...formData, name: e.target.value }); if (formErrors.name) setFormErrors({ ...formErrors, name: "" }); }} placeholder="e.g. Main FTMO" className={`h-11 w-full rounded-lg border ${formErrors.name ? "border-red-500/50" : "border-border"} bg-background/70 px-4 text-sm outline-none focus:border-primary/30`} />
+                    {formErrors.name && <p className="mt-1 text-xs text-red-400">{formErrors.name}</p>}
                   </div>
                   <div>
                     <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Broker</label>
@@ -166,7 +197,8 @@ export default function Settings() {
                   </div>
                   <div>
                     <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Initial Balance</label>
-                    <input type="number" value={formData.initialBalance} onChange={(e) => setFormData({ ...formData, initialBalance: e.target.value })} className="h-11 w-full rounded-lg border border-border bg-background/70 px-4 text-sm font-mono outline-none focus:border-primary/30" />
+                    <input type="number" value={formData.initialBalance} onChange={(e) => { setFormData({ ...formData, initialBalance: e.target.value }); if (formErrors.initialBalance) setFormErrors({ ...formErrors, initialBalance: "" }); }} className={`h-11 w-full rounded-lg border ${formErrors.initialBalance ? "border-red-500/50" : "border-border"} bg-background/70 px-4 text-sm font-mono outline-none focus:border-primary/30`} />
+                    {formErrors.initialBalance && <p className="mt-1 text-xs text-red-400">{formErrors.initialBalance}</p>}
                   </div>
                   <div>
                     <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Current Balance</label>
@@ -214,7 +246,7 @@ export default function Settings() {
                           <Check size={14} />
                         </button>
                       )}
-                      <button onClick={() => handleDelete(acc.id)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-red-400 transition-colors">
+                      <button onClick={() => setConfirmDelete(acc)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-red-400 transition-colors">
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -367,6 +399,17 @@ export default function Settings() {
           </GlassPanel>
         </div>
       </motion.div>
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => handleDelete(confirmDelete.id)}
+        title="Delete Account"
+        message={`Are you sure you want to delete "${confirmDelete?.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </motion.div>
   );
 }
+

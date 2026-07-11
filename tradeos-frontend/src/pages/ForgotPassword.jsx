@@ -9,12 +9,17 @@ import { Mail, ArrowLeft, Loader2, Copy, CheckCircle } from "lucide-react";
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
   const [resetToken, setResetToken] = useState(null);
   const [copied, setCopied] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email.trim()) return errorToast("Enter your email address");
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError("Enter a valid email address");
+      return;
+    }
+    setEmailError("");
 
     try {
       setLoading(true);
@@ -94,11 +99,12 @@ export default function ForgotPassword() {
                   type="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(""); }}
                   placeholder="you@example.com"
                   className="h-full w-full bg-transparent py-4 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                 />
               </div>
+              {emailError && <p className="mt-1 text-xs text-red-400">{emailError}</p>}
             </div>
 
             <button

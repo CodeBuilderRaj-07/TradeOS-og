@@ -26,7 +26,9 @@ export default function AlgoBuilder() {
   const isEditing = Boolean(id);
 
   const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -43,14 +45,16 @@ export default function AlgoBuilder() {
   });
 
   useEffect(() => {
-    API.get("/trading-accounts")
-      .then((res) => setAccounts(res.data || []))
-      .catch(() => errorToast("Failed to load trading accounts"));
+    const load = async () => {
+      try {
+        const [accRes, ...rest] = await Promise.all([
+          API.get("/trading-accounts"),
+          ...(isEditing ? [API.get(`/algo-strategies/${id}`)] : []),
+        ]);
+        setAccounts(accRes.data || []);
 
-    if (isEditing) {
-      API.get(`/algo-strategies/${id}`)
-        .then((res) => {
-          const algo = res.data;
+        if (isEditing && rest[0]) {
+          const algo = rest[0].data;
           if (algo) {
             setFormData({
               name: algo.name || "",
@@ -67,20 +71,31 @@ export default function AlgoBuilder() {
               tradingAccountId: algo.tradingAccountId || "",
             });
           }
-        })
-        .catch(() => errorToast("Failed to load algo"));
-    }
+        }
+      } catch {
+        errorToast("Failed to load algo data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [id, isEditing]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const validate = () => {
+    const errors = {};
+    if (!formData.name.trim()) errors.name = "Name is required";
+    if (!formData.symbol) errors.symbol = "Select a symbol";
+    if (!formData.tradingAccountId) errors.tradingAccountId = "Select a trading account";
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSave = async (andStart) => {
-    if (!formData.name || !formData.symbol) {
-      errorToast("Name and symbol are required");
-      return;
-    }
+    if (!validate()) return;
 
     setSaving(true);
     try {
@@ -115,6 +130,31 @@ export default function AlgoBuilder() {
       setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6 max-w-[900px] mx-auto">
+        <div className="flex items-center gap-4">
+          <div className="skeleton h-10 w-10 rounded-lg" />
+          <div>
+            <div className="skeleton h-8 w-48 rounded-xl" />
+            <div className="skeleton mt-2 h-4 w-56 rounded-full" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 mt-6">
+          <div className="space-y-5">
+            <div className="glass p-6"><div className="skeleton h-48 w-full rounded-lg" /></div>
+            <div className="glass p-6"><div className="skeleton h-32 w-full rounded-lg" /></div>
+            <div className="glass p-6"><div className="skeleton h-40 w-full rounded-lg" /></div>
+          </div>
+          <div className="space-y-5">
+            <div className="glass p-6"><div className="skeleton h-36 w-full rounded-lg" /></div>
+            <div className="glass p-6"><div className="skeleton h-32 w-full rounded-lg" /></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const showPriceField = formData.entryTrigger === "PRICE_ABOVE" || formData.entryTrigger === "PRICE_BELOW";
 
@@ -156,10 +196,11 @@ export default function AlgoBuilder() {
               <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Name</label>
               <input
                 value={formData.name}
-                onChange={(e) => handleChange("name", e.target.value)}
+                onChange={(e) => { handleChange("name", e.target.value); if (formErrors.name) setFormErrors({ ...formErrors, name: "" }); }}
                 placeholder="e.g. BTC Momentum Breaker"
-                className="h-12 w-full rounded-lg border border-border bg-background/70 px-4 text-sm text-foreground outline-none focus:border-primary/30"
+                className={`h-12 w-full rounded-lg border ${formErrors.name ? "border-red-500/50" : "border-border"} bg-background/70 px-4 text-sm text-foreground outline-none focus:border-primary/30`}
               />
+              {formErrors.name && <p className="mt-1 text-xs text-red-400">{formErrors.name}</p>}
             </div>
             <div>
               <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Description</label>
@@ -184,8 +225,8 @@ export default function AlgoBuilder() {
                 <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Symbol / Pair</label>
                 <select
                   value={formData.symbol}
-                  onChange={(e) => handleChange("symbol", e.target.value)}
-                  className="h-12 w-full rounded-lg border border-border bg-background/70 px-4 text-sm text-foreground outline-none focus:border-primary/30"
+                  onChange={(e) => { handleChange("symbol", e.target.value); if (formErrors.symbol) setFormErrors({ ...formErrors, symbol: "" }); }}
+                  className={`h-12 w-full rounded-lg border ${formErrors.symbol ? "border-red-500/50" : "border-border"} bg-background/70 px-4 text-sm text-foreground outline-none focus:border-primary/30`}
                 >
                   {PAIRS.map((p) => <option key={p}>{p}</option>)}
                 </select>
@@ -333,8 +374,8 @@ export default function AlgoBuilder() {
               <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Connected Account</label>
               <select
                 value={formData.tradingAccountId}
-                onChange={(e) => handleChange("tradingAccountId", e.target.value)}
-                className="h-12 w-full rounded-lg border border-border bg-background/70 px-4 text-sm text-foreground outline-none focus:border-primary/30"
+                onChange={(e) => { handleChange("tradingAccountId", e.target.value); if (formErrors.tradingAccountId) setFormErrors({ ...formErrors, tradingAccountId: "" }); }}
+                className={`h-12 w-full rounded-lg border ${formErrors.tradingAccountId ? "border-red-500/50" : "border-border"} bg-background/70 px-4 text-sm text-foreground outline-none focus:border-primary/30`}
               >
                 <option value="">Select account...</option>
                 {accounts.map((acc) => (
@@ -343,6 +384,7 @@ export default function AlgoBuilder() {
                   </option>
                 ))}
               </select>
+              {formErrors.tradingAccountId && <p className="mt-1 text-xs text-red-400">{formErrors.tradingAccountId}</p>}
             </div>
             {accounts.length === 0 && (
               <p className="text-xs text-muted-foreground">

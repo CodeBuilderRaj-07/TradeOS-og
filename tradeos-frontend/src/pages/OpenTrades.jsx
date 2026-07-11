@@ -4,6 +4,7 @@ import { ArrowUpRight, ArrowDownRight, TrendingDown, Plus, ChevronLeft, ChevronR
 import { motion } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/animations/stagger"
 import GlassPanel from "@/components/ui/GlassPanel";
+import EmptyTrades from "@/components/trades/EmptyTrades";
 import { useOpenTrades } from "@/hooks/useOpenTrades";
 import API from "@/services/api";
 import { successToast, errorToast } from "@/services/toastService";
@@ -137,16 +138,7 @@ export default function OpenTrades() {
 
       <motion.div variants={staggerItem}>
         {trades.length === 0 ? (
-          <GlassPanel className="p-14 text-center">
-            <h2 className="text-2xl font-bold text-foreground">No Open Trades</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Your active positions will appear here.</p>
-            <button
-              onClick={() => navigate("/new-trade")}
-              className="mt-6 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              Log New Trade
-            </button>
-          </GlassPanel>
+          <EmptyTrades />
         ) : (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">

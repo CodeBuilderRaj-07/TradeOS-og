@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Layers3, Plus, Trash2, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 import API from "@/services/api";
 import { successToast, errorToast } from "@/services/toastService";
 import { pageTransition } from "@/animations/page";
@@ -36,6 +37,7 @@ function Strategies() {
     checklist: [],
   });
   const [checklistInput, setChecklistInput] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const fetchStrategies = async () => {
     try {
@@ -63,10 +65,12 @@ function Strategies() {
     }
   };
 
-  const deleteStrategy = async (id) => {
+  const doDelete = async () => {
+    if (!confirmDelete) return;
     try {
-      await API.delete(`/strategies/${id}`);
+      await API.delete(`/strategies/${confirmDelete.id}`);
       successToast("Strategy deleted");
+      setConfirmDelete(null);
       fetchStrategies();
     } catch {
       errorToast("Failed to delete strategy");
@@ -211,7 +215,7 @@ function Strategies() {
                         {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                       </button>
                       <button
-                        onClick={() => deleteStrategy(strategy.id)}
+                        onClick={() => setConfirmDelete(strategy)}
                         className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-red-400 transition-colors"
                       >
                         <Trash2 size={16} />
@@ -257,6 +261,16 @@ function Strategies() {
           })
         )}
       </motion.section>
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={doDelete}
+        title="Delete Strategy"
+        message={`Are you sure you want to delete "${confirmDelete?.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </motion.div>
   );
 }

@@ -14,15 +14,19 @@ export default function ResetPassword() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!token) return errorToast("Missing reset token");
-    if (newPassword.length < 6) return errorToast("Password must be at least 6 characters");
-    if (newPassword !== confirmPassword) return errorToast("Passwords do not match");
+    const errors = {};
+    if (!token) errors.token = "Missing reset token";
+    if (newPassword.length < 6) errors.newPassword = "At least 6 characters";
+    if (newPassword !== confirmPassword) errors.confirmPassword = "Passwords do not match";
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
 
     try {
       setLoading(true);
@@ -66,49 +70,51 @@ export default function ResetPassword() {
             </label>
             <div className="flex h-13 items-center gap-3 rounded-2xl border border-border bg-background/70 px-4 focus-within:shadow-glow focus-within:border-primary/20">
               <Lock size={18} className="shrink-0 text-muted-foreground" />
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="New password"
-                className="h-full w-full bg-transparent py-4 text-sm text-foreground outline-none placeholder:text-muted-foreground"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((p) => !p)}
-                className="shrink-0 text-muted-foreground transition hover:text-foreground"
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={newPassword}
+                  onChange={(e) => { setNewPassword(e.target.value); if (fieldErrors.newPassword) setFieldErrors({ ...fieldErrors, newPassword: "" }); }}
+                  placeholder="New password"
+                  className={`h-full w-full bg-transparent py-4 text-sm text-foreground outline-none placeholder:text-muted-foreground ${fieldErrors.newPassword ? "text-red-400" : ""}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((p) => !p)}
+                  className="shrink-0 text-muted-foreground transition hover:text-foreground"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {fieldErrors.newPassword && <p className="mt-1 text-xs text-red-400">{fieldErrors.newPassword}</p>}
             </div>
-          </div>
 
-          <div>
-            <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Confirm Password
-            </label>
-            <div className="flex h-13 items-center gap-3 rounded-2xl border border-border bg-background/70 px-4 focus-within:shadow-glow focus-within:border-primary/20">
-              <Lock size={18} className="shrink-0 text-muted-foreground" />
-              <input
-                type={showConfirm ? "text" : "password"}
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm new password"
-                className="h-full w-full bg-transparent py-4 text-sm text-foreground outline-none placeholder:text-muted-foreground"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirm((p) => !p)}
-                className="shrink-0 text-muted-foreground transition hover:text-foreground"
-                tabIndex={-1}
-              >
-                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+            <div>
+              <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Confirm Password
+              </label>
+              <div className="flex h-13 items-center gap-3 rounded-2xl border border-border bg-background/70 px-4 focus-within:shadow-glow focus-within:border-primary/20">
+                <Lock size={18} className="shrink-0 text-muted-foreground" />
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => { setConfirmPassword(e.target.value); if (fieldErrors.confirmPassword) setFieldErrors({ ...fieldErrors, confirmPassword: "" }); }}
+                  placeholder="Confirm new password"
+                  className={`h-full w-full bg-transparent py-4 text-sm text-foreground outline-none placeholder:text-muted-foreground ${fieldErrors.confirmPassword ? "text-red-400" : ""}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm((p) => !p)}
+                  className="shrink-0 text-muted-foreground transition hover:text-foreground"
+                  tabIndex={-1}
+                >
+                  {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {fieldErrors.confirmPassword && <p className="mt-1 text-xs text-red-400">{fieldErrors.confirmPassword}</p>}
             </div>
-          </div>
 
           <button
             type="submit"

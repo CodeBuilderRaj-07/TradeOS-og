@@ -4,6 +4,7 @@ import { staggerContainer, staggerItem } from "@/animations/stagger"
 import { useNavigate } from "react-router-dom";
 import { Bot, Plus, Play, Square, Trash2, ExternalLink, Activity, TrendingUp, TrendingDown } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 import API from "@/services/api";
 import { successToast, errorToast } from "@/services/toastService";
 
@@ -24,6 +25,7 @@ export default function AlgoTrading() {
   const [algos, setAlgos] = useState([]);
   const [executions, setExecutions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -52,10 +54,12 @@ export default function AlgoTrading() {
     }
   };
 
-  const deleteAlgo = async (id) => {
+  const doDeleteAlgo = async () => {
+    if (!confirmDelete) return;
     try {
-      await API.delete(`/algo-strategies/${id}`);
+      await API.delete(`/algo-strategies/${confirmDelete.id}`);
       successToast("Algo deleted");
+      setConfirmDelete(null);
       fetchData();
     } catch {
       errorToast("Failed to delete algo");
@@ -243,7 +247,7 @@ export default function AlgoTrading() {
                       <ExternalLink size={12} />
                     </button>
                     <button
-                      onClick={() => deleteAlgo(algo.id)}
+                      onClick={() => setConfirmDelete(algo)}
                       className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-red-400 transition-colors"
                     >
                       <Trash2 size={12} />
@@ -298,6 +302,16 @@ export default function AlgoTrading() {
           </div>
         </GlassPanel>
       )}
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={doDeleteAlgo}
+        title="Delete Algo"
+        message={`Are you sure you want to delete "${confirmDelete?.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </motion.div>
     </motion.div>
   );

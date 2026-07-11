@@ -17,6 +17,7 @@ import { useAnalytics } from "@/hooks/useAnalytics";
 
 import { pageTransition } from "@/animations/page";
 import { staggerContainer, staggerItem } from "@/animations/stagger";
+import { errorToast } from "@/services/toastService";
 import API from "@/services/api";
 
 const COLORS = ["#3b82f6", "#34d399", "#f87171", "#facc15", "#a78bfa", "#f472b6"];
@@ -40,7 +41,7 @@ function Analytics() {
       const a = document.createElement("a");
       a.href = url; a.download = `tradeos_export_${new Date().toISOString().slice(0,10)}.csv`; a.click();
       URL.revokeObjectURL(url);
-    } catch {}
+    } catch { errorToast("Failed to export CSV"); }
   }, []);
 
   const closedTrades = summary?.closedTrades || 0;
