@@ -3,9 +3,11 @@ package com.TradeOS.service;
 import com.TradeOS.dto.MT5TradeUpdateDTO;
 import com.TradeOS.entity.Trade;
 import com.TradeOS.entity.TradingAccount;
+import com.TradeOS.entity.User;
 import com.TradeOS.notification.NotificationPublisher;
 import com.TradeOS.repository.TradeRepository;
 import com.TradeOS.repository.TradingAccountRepository;
+import com.TradeOS.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,20 +34,45 @@ public class BrokerSyncService {
     @Autowired
     private NotificationPublisher notificationPublisher;
 
-    public void processTradeUpdate(MT5TradeUpdateDTO dto) {
+    @Autowired
+    private UserRepository userRepository;
+
+    public void processTradeUpdate(MT5TradeUpdateDTO dto, String apiToken) {
         String accountId = dto.getAccountId();
         String ticket = dto.getTicket();
         String status = dto.getStatus();
         String broker = dto.getBroker();
         if (broker == null || broker.isBlank()) broker = "MT5";
 
-        // Find the user who owns this broker account
-        TradingAccount brokerAccount = tradingAccountRepository.findByBrokerAndApiKey(broker, accountId);
-        if (brokerAccount == null) {
-            log.warn("No {} account mapping found for accountId={}. Create a TradingAccount with broker={} and apiKey=accountId.", broker, accountId, broker);
+        // Find user from API token
+        String userEmail = null;
+        if (apiToken != null && !apiToken.isBlank()) {
+            User user = userRepository.findByApiToken(apiToken);
+            if (user != null) {
+                userEmail = user.getEmail();
+            }
+        }
+
+        if (userEmail == null) {
+            log.warn("No user found for apiToken, dropping trade update accountId={} ticket={}", accountId, ticket);
             return;
         }
-        String userEmail = brokerAccount.getUserEmail();
+
+        // Auto-create TradingAccount mapping if it doesn't exist
+        TradingAccount brokerAccount = tradingAccountRepository.findByBrokerAndApiKey(broker, accountId);
+        if (brokerAccount == null) {
+            brokerAccount = new TradingAccount();
+            brokerAccount.setName(broker + " - " + accountId);
+            brokerAccount.setBroker(broker);
+            brokerAccount.setApiKey(accountId);
+            brokerAccount.setType("live");
+            brokerAccount.setCurrency("USD");
+            brokerAccount.setActive(true);
+            brokerAccount.setUserEmail(userEmail);
+            brokerAccount.setCreatedAt(LocalDateTime.now());
+            tradingAccountRepository.save(brokerAccount);
+            log.info("Auto-created TradingAccount: broker={} accountId={} user={}", broker, accountId, userEmail);
+        }
 
         // Look for existing trade by mt5Ticket
         List<Trade> existing = tradeRepository.findByUserEmailAndMt5Ticket(userEmail, ticket);
@@ -105,14 +132,12 @@ public class BrokerSyncService {
         tradeRepository.save(trade);
         log.info("Synced {} trade ticket={} {} {} for user={}", broker, ticket, trade.getSymbol(), trade.getTradeType(), userEmail);
 
-        // Notify frontend
         String type = "OPEN".equalsIgnoreCase(status) ? "trade_opened" : "trade_updated";
         notificationPublisher.pushNotification(
             "Trade " + status, symbol(trade) + " " + trade.getTradeType(),
             type, trade.getSymbol()
         );
 
-        // Push full trade data for real-time UI update
         Map<String, Object> tradeData = new HashMap<>();
         tradeData.put("id", trade.getId());
         tradeData.put("symbol", trade.getSymbol());

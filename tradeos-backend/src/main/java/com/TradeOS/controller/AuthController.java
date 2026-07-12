@@ -66,6 +66,19 @@ public class AuthController {
         return userService.updateProfile(email, body.getOrDefault("fullName", ""));
     }
 
+    @PostMapping("/generate-token")
+    public Map<String, Object> generateApiToken(HttpServletRequest request) {
+        String email = (String) request.getAttribute("email");
+        String token = userService.generateApiToken(email);
+        Map<String, Object> res = new HashMap<>();
+        if (token == null) {
+            res.put("error", "User not found");
+            return res;
+        }
+        res.put("apiToken", token);
+        return res;
+    }
+
     @PostMapping("/forgot-password")
     public Map<String, Object> forgotPassword(@RequestBody Map<String, String> body) {
         return userService.forgotPassword(body.getOrDefault("email", ""));

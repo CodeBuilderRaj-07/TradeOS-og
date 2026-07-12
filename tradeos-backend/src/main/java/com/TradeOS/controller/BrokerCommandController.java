@@ -18,7 +18,10 @@ public class BrokerCommandController {
     private BrokerCommandService brokerCommandService;
 
     @GetMapping("/pending")
-    public ResponseEntity<List<BrokerCommand>> getPendingCommands(@RequestParam String accountId) {
+    public ResponseEntity<List<BrokerCommand>> getPendingCommands(
+            @RequestParam String accountId,
+            @RequestParam(value = "token", required = false) String token
+    ) {
         return ResponseEntity.ok(brokerCommandService.getPendingCommands(accountId));
     }
 

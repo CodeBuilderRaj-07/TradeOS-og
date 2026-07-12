@@ -11,8 +11,8 @@
 //| Configuration                                                    |
 //+------------------------------------------------------------------+
 input string BackendURL   = "https://tradeos-backend-twuw.onrender.com";
-input string APIKey       = "";
-input string AccountID    = "";
+input string APIToken     = "";  // Paste from Settings > API Token
+input string AccountID    = "";  // Leave empty to auto-detect
 input string BrokerName   = "MT4";
 
 //+------------------------------------------------------------------+
@@ -29,8 +29,9 @@ int    g_lastTotalTrades = -1;
 //+------------------------------------------------------------------+
 int OnInit() {
    g_accountId = (AccountID == "") ? IntegerToString(AccountNumber()) : AccountID;
-   g_tradeEndpoint = BackendURL + "/api/broker/trade-update";
-   g_pendingEndpoint = BackendURL + "/api/broker/commands/pending?accountId=" + g_accountId;
+   string tokenParam = (StringLen(APIToken) > 0) ? "&token=" + APIToken : "";
+   g_tradeEndpoint = BackendURL + "/api/broker/trade-update" + (StringLen(APIToken) > 0 ? "?token=" + APIToken : "");
+   g_pendingEndpoint = BackendURL + "/api/broker/commands/pending?accountId=" + g_accountId + tokenParam;
    g_ackEndpoint = BackendURL + "/api/broker/commands/";
 
    Print("MT4_TradeSync v2 initialized. Account: " + g_accountId);
@@ -38,6 +39,8 @@ int OnInit() {
    Print("Ensure " + BackendURL + " is whitelisted in Tools > Options > Expert Advisors");
    return INIT_SUCCEEDED;
 }
+
+
 
 //+------------------------------------------------------------------+
 //| OnTick                                                           |
@@ -73,12 +76,14 @@ void SyncTradesToBackend() {
 //| Poll and execute pending commands                                |
 //+------------------------------------------------------------------+
 void PollAndExecuteCommands() {
-   string responseData = "";
+   char emptyData[], resultData[];
+   string responseHeaders = "";
 
    ResetLastError();
-   int res = WebRequest("GET", g_pendingEndpoint, "", 5000, responseData);
+   int res = WebRequest("GET", g_pendingEndpoint, "", "", 5000, emptyData, resultData, responseHeaders);
 
    if (res == -1) return;
+   string responseData = CharArrayToString(resultData);
    if (responseData == "" || responseData == "[]") return;
 
    string entries[];
@@ -119,11 +124,11 @@ void PollAndExecuteCommands() {
 
       string ackURL = g_ackEndpoint + cmdId + "/ack";
       char ackData[], ackResult[];
+      string ackRespHeaders = "";
       StringToCharArray(ackPayload, ackData);
-      string ackHeaders = "Content-Type: application/json\r\n";
 
       ResetLastError();
-      WebRequest("POST", ackURL, ackHeaders, 5000, ackData, ackResult, ackHeaders);
+      WebRequest("POST", ackURL, "", "", 5000, ackData, ackResult, ackRespHeaders);
    }
 }
 
@@ -234,12 +239,11 @@ void SendTradeData(int ticket, string status) {
    payload += "}";
 
    char data[], result[];
+   string respHeaders = "";
    StringToCharArray(payload, data);
-   string headers = "Content-Type: application/json\r\n";
-   if (StringLen(APIKey) > 0) headers += "X-API-Key: " + APIKey + "\r\n";
 
    ResetLastError();
-   WebRequest("POST", g_tradeEndpoint, headers, 5000, data, result, headers);
+   WebRequest("POST", g_tradeEndpoint, "", "", 5000, data, result, respHeaders);
 }
 
 //+------------------------------------------------------------------+

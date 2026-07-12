@@ -142,6 +142,21 @@ public class UserService {
         return result;
     }
 
+    public String generateApiToken(String email) {
+        User user = userRepository.findByEmail(email);
+        if (user == null) return null;
+        String token = java.util.UUID.randomUUID().toString().replace("-", "") +
+                       java.util.UUID.randomUUID().toString().replace("-", "");
+        user.setApiToken(token);
+        userRepository.save(user);
+        return token;
+    }
+
+    public User getUserByApiToken(String apiToken) {
+        if (apiToken == null || apiToken.isBlank()) return null;
+        return userRepository.findByApiToken(apiToken);
+    }
+
     public Map<String, Object> resetPassword(String token, String newPassword) {
         Map<String, Object> result = new HashMap<>();
 

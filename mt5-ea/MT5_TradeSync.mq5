@@ -11,8 +11,8 @@
 //| Configuration                                                    |
 //+------------------------------------------------------------------+
 input string BackendURL   = "https://tradeos-backend-twuw.onrender.com";
-input string APIKey       = "";
-input string AccountID    = "";
+input string APIToken     = "";  // Paste from Settings > API Token
+input string AccountID    = "";  // Leave empty to auto-detect
 input string BrokerName   = "MT5";
 
 //+------------------------------------------------------------------+
@@ -41,6 +41,17 @@ int OnInit() {
 
    SnapshotTrades();
    return INIT_SUCCEEDED;
+}
+
+//+------------------------------------------------------------------+
+//| Build request headers with API token                              |
+//+------------------------------------------------------------------+
+string AuthHeaders() {
+   string h = "Content-Type: application/json\r\n";
+   if (StringLen(APIToken) > 0) {
+      h += "X-API-Token: " + APIToken + "\r\n";
+   }
+   return h;
 }
 
 //+------------------------------------------------------------------+
@@ -93,7 +104,8 @@ void PollAndExecuteCommands() {
    string responseData = "";
 
    ResetLastError();
-   int res = WebRequest("GET", g_pendingEndpoint, "", 5000, responseData, responseHeaders);
+   string pollHeaders = AuthHeaders();
+   int res = WebRequest("GET", g_pendingEndpoint, pollHeaders, 5000, responseData, responseHeaders);
 
    if (res == -1) {
       int err = GetLastError();
@@ -146,7 +158,7 @@ void PollAndExecuteCommands() {
       string ackURL = g_ackEndpoint + cmdId + "/ack";
       char ackData[], ackResult[];
       StringToCharArray(ackPayload, ackData);
-      string ackHeaders = "Content-Type: application/json\r\n";
+      string ackHeaders = AuthHeaders();
 
       ResetLastError();
       WebRequest("POST", ackURL, ackHeaders, 5000, ackData, ackResult, ackHeaders);
@@ -313,8 +325,7 @@ void SendTradeData(ulong ticket, string status) {
 
    char data[], result[];
    StringToCharArray(payload, data);
-   string headers = "Content-Type: application/json\r\n";
-   if (StringLen(APIKey) > 0) headers += "X-API-Key: " + APIKey + "\r\n";
+   string headers = AuthHeaders();
 
    ResetLastError();
    int res = WebRequest("POST", g_tradeEndpoint, headers, 5000, data, result, headers);
@@ -439,7 +450,7 @@ void SendCloseNotification(string ticket) {
    string payload = "{\"ticket\":\"" + ticket + "\",\"account_id\":\"" + g_accountId + "\",\"broker\":\"" + BrokerName + "\",\"status\":\"CLOSED\"}";
    char data[], result[];
    StringToCharArray(payload, data);
-   string headers = "Content-Type: application/json\r\n";
+   string headers = AuthHeaders();
    ResetLastError();
    WebRequest("POST", g_tradeEndpoint, headers, 5000, data, result, headers);
 }
@@ -452,7 +463,7 @@ void SyncOrders() {
          string payload = "{\"ticket\":\"" + IntegerToString(ticket) + "\",\"account_id\":\"" + g_accountId + "\",\"broker\":\"" + BrokerName + "\",\"symbol\":\"" + OrderGetString(ORDER_SYMBOL) + "\",\"type\":\"PENDING\",\"volume\":\"" + DoubleToString(OrderGetDouble(ORDER_VOLUME_CURRENT), 2) + "\",\"status\":\"PENDING\"}";
          char data[], result[];
          StringToCharArray(payload, data);
-         string headers = "Content-Type: application/json\r\n";
+         string headers = AuthHeaders();
          ResetLastError();
          WebRequest("POST", g_tradeEndpoint, headers, 5000, data, result, headers);
       }

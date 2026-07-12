@@ -26,6 +26,8 @@ public class User {
 
     private String providerId;
 
+    private String apiToken;
+
     public Long getId() {
         return id;
     }
@@ -97,4 +99,7 @@ public class User {
     public void setProviderId(String providerId) {
         this.providerId = providerId;
     }
+
+    public String getApiToken() { return apiToken; }
+    public void setApiToken(String apiToken) { this.apiToken = apiToken; }
 }

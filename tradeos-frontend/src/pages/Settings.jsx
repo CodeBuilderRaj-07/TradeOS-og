@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/animations/stagger"
-import { User, Plus, Trash2, Upload, Check, Star, LogOut, Shield, Sun, Moon, Bell, Volume2, VolumeX, Cable, ExternalLink, Copy } from "lucide-react";
+import { User, Plus, Trash2, Upload, Check, Star, LogOut, Shield, Sun, Moon, Bell, Volume2, VolumeX, Cable, ExternalLink, Copy, Key } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import API from "@/services/api";
@@ -299,17 +299,19 @@ export default function Settings() {
                       <p className="font-semibold text-foreground">Setup instructions:</p>
                       {acc.broker === "MT5" ? (
                         <>
-                          <p>1. Copy <span className="font-mono text-primary">MT5_TradeSync.mq5</span> to <span className="font-mono">MQL5/Experts/</span></p>
-                          <p>2. Download <span className="font-mono text-primary">JSON.mqh</span> from github.com/dingmaotu/mql5-json → <span className="font-mono">MQL5/Include/</span></p>
-                          <p>3. Tools → Options → Expert Advisors → add URL to <span className="font-mono text-primary">Allowed WebRequest</span></p>
-                          <p>4. Attach EA to any chart with Algo Trading enabled</p>
+                          <p>1. In the <span className="font-mono text-primary">API Token</span> section below, generate a token and copy it</p>
+                          <p>2. Copy <span className="font-mono text-primary">MT5_TradeSync.mq5</span> to <span className="font-mono">MQL5/Experts/</span></p>
+                          <p>3. Open the EA in MT5, set <span className="font-mono text-primary">APIToken</span> = your token</p>
+                          <p>4. Tools → Options → Expert Advisors → add URL to <span className="font-mono text-primary">Allowed WebRequest</span></p>
+                          <p>5. Attach EA to any chart with Algo Trading enabled</p>
                         </>
                       ) : acc.broker === "MT4" ? (
                         <>
-                          <p>1. Copy <span className="font-mono text-primary">MT4_TradeSync.mq4</span> to <span className="font-mono">MQL4/Experts/</span></p>
-                          <p>2. Download <span className="font-mono text-primary">JSON.mqh</span> from github.com/dingmaotu/mql5-json → <span className="font-mono">MQL4/Include/</span></p>
-                          <p>3. Tools → Options → Expert Advisors → add URL to <span className="font-mono text-primary">Allowed WebRequest</span></p>
-                          <p>4. Attach EA to any chart with Algo Trading enabled</p>
+                          <p>1. In the <span className="font-mono text-primary">API Token</span> section below, generate a token and copy it</p>
+                          <p>2. Copy <span className="font-mono text-primary">MT4_TradeSync.mq4</span> to <span className="font-mono">MQL4/Experts/</span></p>
+                          <p>3. Open the EA in MT4, set <span className="font-mono text-primary">APIToken</span> = your token</p>
+                          <p>4. Tools → Options → Expert Advisors → add URL to <span className="font-mono text-primary">Allowed WebRequest</span></p>
+                          <p>5. Attach EA to any chart with Algo Trading enabled</p>
                         </>
                       ) : (
                         <p>Configure your {acc.broker} platform to POST trade data to <span className="font-mono text-primary">/api/broker/trade-update</span></p>
@@ -446,6 +448,40 @@ export default function Settings() {
                 Sign Out
               </button>
             </div>
+          </GlassPanel>
+
+          {/* API Token */}
+          <GlassPanel className="p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-rose-500/10">
+                <Key size={22} className="text-rose-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-foreground">API Token</h3>
+                <p className="text-sm text-muted-foreground">Used by MT4/MT5 EA to link your trades</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              Generate a token, then paste it into the <span className="font-mono text-foreground">APIToken</span> input field of the EA.
+            </p>
+            <button
+              onClick={async () => {
+                try {
+                  const res = await API.post("/auth/generate-token");
+                  const token = res.data?.apiToken || res.apiToken;
+                  if (token) {
+                    navigator.clipboard.writeText(token);
+                    successToast("Token generated & copied to clipboard");
+                  }
+                } catch {
+                  errorToast("Failed to generate token");
+                }
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 px-5 py-3 text-sm font-semibold text-rose-400 transition-colors hover:bg-rose-500/10"
+            >
+              <Key size={16} />
+              Generate New Token
+            </button>
           </GlassPanel>
 
           {/* Theme */}

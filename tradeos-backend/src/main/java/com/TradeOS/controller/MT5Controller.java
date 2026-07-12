@@ -19,10 +19,15 @@ public class MT5Controller {
     private BrokerSyncService brokerSyncService;
 
     @PostMapping("/trade-update")
-    public ResponseEntity<ApiResponse<String>> receiveTradeUpdate(@RequestBody MT5TradeUpdateDTO dto) {
+    public ResponseEntity<ApiResponse<String>> receiveTradeUpdate(
+            @RequestBody MT5TradeUpdateDTO dto,
+            @RequestHeader(value = "X-API-Token", required = false) String headerToken,
+            @RequestParam(value = "token", required = false) String queryToken
+    ) {
+        String apiToken = headerToken != null ? headerToken : queryToken;
         log.info("Received MT5 trade update: ticket={} status={}", dto.getTicket(), dto.getStatus());
         dto.setBroker("MT5");
-        brokerSyncService.processTradeUpdate(dto);
+        brokerSyncService.processTradeUpdate(dto, apiToken);
         return ResponseEntity.ok(ApiResponse.ok("Trade update processed"));
     }
 
