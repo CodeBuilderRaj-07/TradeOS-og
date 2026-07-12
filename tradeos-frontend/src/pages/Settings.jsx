@@ -331,6 +331,40 @@ export default function Settings() {
               </div>
             )}
           </GlassPanel>
+
+          {/* API Token */}
+          <GlassPanel className="p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-rose-500/10">
+                <Key size={22} className="text-rose-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-foreground">API Token</h3>
+                <p className="text-sm text-muted-foreground">Used by MT4/MT5 EA to link your trades</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              Generate a token, then paste it into the <span className="font-mono text-foreground">APIToken</span> input field of the EA.
+            </p>
+            <button
+              onClick={async () => {
+                try {
+                  const res = await API.post("/auth/generate-token");
+                  const token = res.data?.apiToken || res.apiToken;
+                  if (token) {
+                    navigator.clipboard.writeText(token);
+                    successToast("Token generated & copied to clipboard");
+                  }
+                } catch {
+                  errorToast("Failed to generate token");
+                }
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 px-5 py-3 text-sm font-semibold text-rose-400 transition-colors hover:bg-rose-500/10"
+            >
+              <Key size={16} />
+              Generate New Token
+            </button>
+          </GlassPanel>
         </div>
 
         {/* Right - CSV Import */}
@@ -448,40 +482,6 @@ export default function Settings() {
                 Sign Out
               </button>
             </div>
-          </GlassPanel>
-
-          {/* API Token */}
-          <GlassPanel className="p-6">
-            <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-rose-500/10">
-                <Key size={22} className="text-rose-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-foreground">API Token</h3>
-                <p className="text-sm text-muted-foreground">Used by MT4/MT5 EA to link your trades</p>
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mb-3">
-              Generate a token, then paste it into the <span className="font-mono text-foreground">APIToken</span> input field of the EA.
-            </p>
-            <button
-              onClick={async () => {
-                try {
-                  const res = await API.post("/auth/generate-token");
-                  const token = res.data?.apiToken || res.apiToken;
-                  if (token) {
-                    navigator.clipboard.writeText(token);
-                    successToast("Token generated & copied to clipboard");
-                  }
-                } catch {
-                  errorToast("Failed to generate token");
-                }
-              }}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 px-5 py-3 text-sm font-semibold text-rose-400 transition-colors hover:bg-rose-500/10"
-            >
-              <Key size={16} />
-              Generate New Token
-            </button>
           </GlassPanel>
 
           {/* Theme */}
