@@ -20,6 +20,4 @@ COPY --from=builder /app/target/tradeos-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 8080
 
-# All env vars injected at runtime by Render or .env
-
 ENTRYPOINT ["java", "-jar", "app.jar"]
