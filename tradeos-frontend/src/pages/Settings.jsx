@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/animations/stagger"
-import { User, Plus, Trash2, Upload, Check, Star, LogOut, Shield, Sun, Moon, Bell, Volume2, VolumeX, Cable, ExternalLink, Copy, Key } from "lucide-react";
+import { User, Plus, Trash2, Upload, Check, Star, LogOut, Shield, Sun, Moon, Bell, Volume2, VolumeX, Cable, ExternalLink, Copy, Key, Download } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import API from "@/services/api";
@@ -292,78 +292,82 @@ export default function Settings() {
                         {acc.apiKey || "No ID set"}
                       </button>
                     </div>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Your account login: <span className="font-mono text-foreground">{acc.apiKey || "— (set as API Key)"}</span>
-                    </p>
-                    <div className="rounded-lg bg-background/70 border border-border p-4 space-y-2 text-xs">
-                      <p className="font-semibold text-foreground">Setup instructions:</p>
-                      {acc.broker === "MT5" ? (
-                        <>
-                          <p>1. In the <span className="font-mono text-primary">API Token</span> section below, generate a token and copy it</p>
-                          <p>2. Copy <span className="font-mono text-primary">MT5_TradeSync.mq5</span> to <span className="font-mono">MQL5/Experts/</span></p>
-                          <p>3. Open the EA in MT5, set <span className="font-mono text-primary">APIToken</span> = your token</p>
-                          <p>4. Tools → Options → Expert Advisors → add URL to <span className="font-mono text-primary">Allowed WebRequest</span></p>
-                          <p>5. Attach EA to any chart with Algo Trading enabled</p>
-                        </>
-                      ) : acc.broker === "MT4" ? (
-                        <>
-                          <p>1. In the <span className="font-mono text-primary">API Token</span> section below, generate a token and copy it</p>
-                          <p>2. Copy <span className="font-mono text-primary">MT4_TradeSync.mq4</span> to <span className="font-mono">MQL4/Experts/</span></p>
-                          <p>3. Open the EA in MT4, set <span className="font-mono text-primary">APIToken</span> = your token</p>
-                          <p>4. Tools → Options → Expert Advisors → add URL to <span className="font-mono text-primary">Allowed WebRequest</span></p>
-                          <p>5. Attach EA to any chart with Algo Trading enabled</p>
-                        </>
-                      ) : (
-                        <p>Configure your {acc.broker} platform to POST trade data to <span className="font-mono text-primary">/api/broker/trade-update</span></p>
-                      )}
-                      <div className="pt-2 border-t border-border mt-2">
-                        <p className="flex items-center gap-1 text-muted-foreground">
-                          <ExternalLink size={11} />
-                          Backend URL:
-                        </p>
-                        <code className="block mt-1 rounded bg-background px-3 py-1.5 font-mono text-[11px] break-all border border-border">
-                          {import.meta.env.VITE_API_URL || "https://tradeos-backend-twuw.onrender.com"}/api/broker/trade-update
-                        </code>
+
+                    {/* Quick setup */}
+                    <div className="rounded-lg bg-background/70 border border-border p-4 space-y-4 text-xs">
+                      <p className="font-semibold text-foreground text-sm">3-step setup:</p>
+
+                      {/* Step 1 */}
+                      <div className="flex items-start gap-3">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-400 font-bold text-[11px] shrink-0">1</span>
+                        <div className="flex-1">
+                          <p className="font-medium text-foreground mb-1">Generate your API token</p>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await API.post("/auth/generate-token");
+                                const token = res.data?.apiToken || res.apiToken;
+                                if (token) {
+                                  navigator.clipboard.writeText(token);
+                                  successToast("Token generated & copied to clipboard");
+                                }
+                              } catch {
+                                errorToast("Failed to generate token");
+                              }
+                            }}
+                            className="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 px-4 py-2.5 text-sm font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors w-full"
+                          >
+                            <Key size={15} />
+                            Generate & Copy Token
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Step 2 */}
+                      <div className="flex items-start gap-3">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-400 font-bold text-[11px] shrink-0">2</span>
+                        <div className="flex-1">
+                          <p className="font-medium text-foreground mb-1">Download the EA file</p>
+                          <div className="flex gap-2">
+                            <a
+                              href="/MT5_TradeSync.mq5"
+                              download
+                              className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium text-foreground hover:bg-background/80 transition-colors"
+                            >
+                              <Download size={14} />
+                              MT5 EA
+                            </a>
+                            <a
+                              href="/MT4_TradeSync.mq4"
+                              download
+                              className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium text-foreground hover:bg-background/80 transition-colors"
+                            >
+                              <Download size={14} />
+                              MT4 EA
+                            </a>
+                          </div>
+                          <p className="text-muted-foreground mt-1.5">Copy the downloaded file to: <span className="font-mono text-foreground">{acc.broker === "MT5" ? "MQL5/Experts/" : "MQL4/Experts/"}</span></p>
+                        </div>
+                      </div>
+
+                      {/* Step 3 */}
+                      <div className="flex items-start gap-3">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-400 font-bold text-[11px] shrink-0">3</span>
+                        <div className="flex-1">
+                          <p className="font-medium text-foreground mb-1">Attach EA to chart</p>
+                          <ol className="space-y-1 text-muted-foreground list-decimal list-inside">
+                            <li>In MT5: <span className="font-mono text-foreground">Tools → Options → Expert Advisors</span> → whitelist <span className="font-mono text-foreground">{import.meta.env.VITE_API_URL || "https://tradeos-backend-twuw.onrender.com"}</span></li>
+                            <li>Drag <span className="font-mono text-foreground">{acc.broker === "MT5" ? "MT5_TradeSync" : "MT4_TradeSync"}</span> onto any chart</li>
+                            <li>Paste the token into <span className="font-mono text-foreground">APIToken</span> field → OK</li>
+                            <li>Enable <span className="font-mono text-foreground">Algo Trading</span> (green button)</li>
+                          </ol>
+                        </div>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </GlassPanel>
-
-          {/* API Token */}
-          <GlassPanel className="p-6">
-            <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-rose-500/10">
-                <Key size={22} className="text-rose-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-foreground">API Token</h3>
-                <p className="text-sm text-muted-foreground">Used by MT4/MT5 EA to link your trades</p>
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mb-3">
-              Generate a token, then paste it into the <span className="font-mono text-foreground">APIToken</span> input field of the EA.
-            </p>
-            <button
-              onClick={async () => {
-                try {
-                  const res = await API.post("/auth/generate-token");
-                  const token = res.data?.apiToken || res.apiToken;
-                  if (token) {
-                    navigator.clipboard.writeText(token);
-                    successToast("Token generated & copied to clipboard");
-                  }
-                } catch {
-                  errorToast("Failed to generate token");
-                }
-              }}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 px-5 py-3 text-sm font-semibold text-rose-400 transition-colors hover:bg-rose-500/10"
-            >
-              <Key size={16} />
-              Generate New Token
-            </button>
           </GlassPanel>
         </div>
 
