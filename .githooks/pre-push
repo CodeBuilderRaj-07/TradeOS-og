@@ -1,0 +1,37 @@
+#!/bin/bash
+# Pre-push hook: catch common import errors before push
+
+echo "🔍 Running pre-push checks..."
+
+ERRORS=0
+
+# Check files using React.memo also import React
+for file in $(git diff --cached --name-only --diff-filter=ACM | grep -E '\.jsx?$' | grep -v node_modules); do
+  if [ ! -f "$file" ]; then continue; fi
+
+  # Check React.memo -> must import React
+  if grep -q 'React\.memo' "$file" 2>/dev/null; then
+    if ! grep -q "import React" "$file" 2>/dev/null; then
+      echo "❌ $file: uses React.memo but does not import React"
+      ERRORS=$((ERRORS + 1))
+    fi
+  fi
+
+  # Check useMemo/useCallback/useEffect -> must be imported from react
+  for hook in useMemo useCallback useEffect useState useRef; do
+    if grep -q "[^a-zA-Z]$hook" "$file" 2>/dev/null; then
+      if ! grep -q "import.*$hook" "$file" 2>/dev/null; then
+        echo "❌ $file: uses $hook but does not import it"
+        ERRORS=$((ERRORS + 1))
+      fi
+    fi
+  done
+done
+
+if [ $ERRORS -gt 0 ]; then
+  echo "❌ $ERRORS error(s) found. Fix before pushing."
+  exit 1
+fi
+
+echo "✅ All checks passed"
+exit 0
