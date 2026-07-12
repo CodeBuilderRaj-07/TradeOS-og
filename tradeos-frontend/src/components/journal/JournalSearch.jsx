@@ -1,7 +1,7 @@
-import { Search }
+import { Search, X }
   from "lucide-react";
 
-export default function JournalSearch() {
+export default function JournalSearch({ value, onChange }) {
 
   return (
 
@@ -13,9 +13,17 @@ export default function JournalSearch() {
       />
 
       <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         placeholder="Search journal..."
         className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
       />
+
+      {value && (
+        <button onClick={() => onChange("")} className="text-muted-foreground hover:text-foreground transition-colors">
+          <X size={14} />
+        </button>
+      )}
 
     </div>
   );

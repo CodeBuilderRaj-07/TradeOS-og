@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/animations/stagger"
-import { ArrowLeft, TrendingUp, TrendingDown, Trash2, X, Edit3, Check, RefreshCw } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Trash2, X, Edit3, Check, RefreshCw, Loader2 } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
 import API from "@/services/api";
 import { successToast, errorToast } from "@/services/toastService";

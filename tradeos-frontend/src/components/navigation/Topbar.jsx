@@ -76,7 +76,7 @@ export default function Topbar({ setMobileOpen, onAiChatToggle }) {
       </button>
 
       <div className="flex h-10 w-[300px] items-center gap-3 rounded-lg border border-border bg-card px-4 backdrop-blur-xl transition-all duration-300 focus-within:border-primary/30 focus-within:shadow-glow hover:border-primary/20 xl:w-[360px]">
-        <Search size={16} className="text-muted-foreground shrink-0" />
+        <button onClick={() => { if (searchValue.trim()) { navigate(`/journal?search=${encodeURIComponent(searchValue.trim())}`); setSearchValue(""); } }} className="text-muted-foreground hover:text-foreground transition-colors shrink-0"><Search size={16} /></button>
         <input
           type="text"
           value={searchValue}
