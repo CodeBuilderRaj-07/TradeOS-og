@@ -2,6 +2,7 @@ package com.TradeOS.controller;
 
 import com.TradeOS.dto.LoginRequest;
 import com.TradeOS.dto.RegisterRequest;
+import com.TradeOS.security.JwtUtil;
 import com.TradeOS.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -21,6 +22,7 @@ import java.util.Map;
 public class AuthController {
 
     private final UserService userService;
+    private final JwtUtil jwtUtil;
 
     @Value("${GOOGLE_CLIENT_ID}")
     private String googleClientId;
@@ -39,8 +41,9 @@ public class AuthController {
 
     private final WebClient webClient;
 
-    public AuthController(UserService userService) {
+    public AuthController(UserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
+        this.jwtUtil = jwtUtil;
         this.webClient = WebClient.create();
     }
 
