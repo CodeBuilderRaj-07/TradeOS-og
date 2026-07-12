@@ -59,10 +59,22 @@ string AuthHeaders() {
 //+------------------------------------------------------------------+
 void OnTick() {
    static datetime lastCheck = 0;
+   static datetime lastPriceUpdate = 0;
+   static datetime lastResync = 0;
    if (TimeCurrent() - lastCheck < 2) return;
    lastCheck = TimeCurrent();
 
    SyncTradesToBackend();
+   // Send periodic price updates for live P&L (every 5 seconds even if count unchanged)
+   if (TimeCurrent() - lastPriceUpdate >= 5) {
+      lastPriceUpdate = TimeCurrent();
+      SyncPricesToBackend();
+   }
+   // Full reconciliation every 5 minutes to catch any drift
+   if (TimeCurrent() - lastResync >= 300) {
+      lastResync = TimeCurrent();
+      ResyncAllTrades();
+   }
    PollAndExecuteCommands();
 }
 
@@ -140,6 +152,12 @@ void PollAndExecuteCommands() {
       } else if (cmdType == "MOVE_BE") {
          double bePrice = StringToDouble(GetJSONValue(cmdParams, "\"sl\""));
          success = ExecuteMoveBE(cmdTicket, bePrice, errorMsg);
+      } else if (cmdType == "TRAIL_STOP") {
+         double trailOffset = StringToDouble(GetJSONValue(cmdParams, "\"offset\""));
+         success = ExecuteTrailStop(cmdTicket, trailOffset, errorMsg);
+      } else if (cmdType == "PARTIAL_CLOSE") {
+         double pct = StringToDouble(GetJSONValue(cmdParams, "\"percentage\""));
+         success = ExecutePartialClose(cmdTicket, pct, errorMsg);
       } else if (cmdType == "PLACE_ORDER") {
          string sym   = GetJSONValue(cmdParams, "\"symbol\"");
          string typ   = GetJSONValue(cmdParams, "\"type\"");
@@ -304,6 +322,8 @@ void SendTradeData(ulong ticket, string status) {
    string comment = PositionGetString(POSITION_COMMENT);
    ulong magic = PositionGetInteger(POSITION_MAGIC);
 
+   double currentPrice = PositionGetDouble(POSITION_PRICE_CURRENT);
+
    string payload = "{";
    payload += "\"ticket\":\"" + IntegerToString(ticket) + "\",";
    payload += "\"account_id\":\"" + g_accountId + "\",";
@@ -312,6 +332,7 @@ void SendTradeData(ulong ticket, string status) {
    payload += "\"type\":\"" + (type == 0 ? "BUY" : "SELL") + "\",";
    payload += "\"volume\":\"" + DoubleToString(volume, 2) + "\",";
    payload += "\"open_price\":\"" + DoubleToString(openPrice, (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS)) + "\",";
+   payload += "\"current_price\":\"" + DoubleToString(currentPrice, (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS)) + "\",";
    payload += "\"stop_loss\":\"" + (sl == 0 ? "" : DoubleToString(sl, (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS))) + "\",";
    payload += "\"take_profit\":\"" + (tp == 0 ? "" : DoubleToString(tp, (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS))) + "\",";
    payload += "\"profit\":\"" + DoubleToString(profit, 2) + "\",";
@@ -332,6 +353,128 @@ void SendTradeData(ulong ticket, string status) {
    if (res == -1) {
       Print("⚠ Trade sync WebRequest error: " + IntegerToString(GetLastError()));
    }
+}
+
+//+------------------------------------------------------------------+
+//| Push current prices for live P&L (always sends, no dedup)       |
+//+------------------------------------------------------------------+
+void SyncPricesToBackend() {
+   int total = PositionsTotal();
+   for (int i = 0; i < total; i++) {
+      ulong ticket = PositionGetTicket(i);
+      if (ticket > 0 && PositionSelectByTicket(ticket)) {
+         SendTradeData(ticket, "PRICE_UPDATE");
+      }
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Execute TRAIL_STOP command - move SL by offset as price moves    |
+//+------------------------------------------------------------------+
+bool ExecuteTrailStop(string ticketStr, double trailOffset, string &error) {
+   ulong ticket = StringToInteger(ticketStr);
+   if (ticket <= 0) { error = "Invalid ticket"; return false; }
+   if (!PositionSelectByTicket(ticket)) { error = "Position not found"; return false; }
+
+   double currentPrice = PositionGetDouble(POSITION_PRICE_CURRENT);
+   double openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
+   double currentSL = PositionGetDouble(POSITION_SL);
+   long type = PositionGetInteger(POSITION_TYPE);
+
+   double newSL = currentSL;
+   if (type == POSITION_TYPE_BUY) {
+      double trailFrom = (currentSL > 0 && currentSL > openPrice) ? currentSL : openPrice;
+      double distance = currentPrice - trailFrom;
+      if (distance >= trailOffset) {
+         newSL = currentPrice - trailOffset;
+         if (newSL > currentSL) {
+            MqlTradeRequest req = {};
+            MqlTradeResult res = {};
+            req.action = TRADE_ACTION_SLTP;
+            req.position = ticket;
+            req.symbol = PositionGetString(POSITION_SYMBOL);
+            req.sl = newSL;
+            req.tp = PositionGetDouble(POSITION_TP);
+            req.magic = (int)PositionGetInteger(POSITION_MAGIC);
+            ResetLastError();
+            if (!OrderSend(req, res)) {
+               error = "Trail Stop OrderSend failed: " + IntegerToString(GetLastError());
+               return false;
+            }
+            if (res.retcode != TRADE_RETCODE_DONE) {
+               error = "Trail Stop rejected: " + IntegerToString(res.retcode);
+               return false;
+            }
+            Print("✅ Trail Stop updated ticket=" + ticketStr + " sl=" + DoubleToString(newSL));
+            return true;
+         }
+      }
+   } else if (type == POSITION_TYPE_SELL) {
+      double trailFrom = (currentSL > 0 && currentSL < openPrice) ? currentSL : openPrice;
+      double distance = trailFrom - currentPrice;
+      if (distance >= trailOffset) {
+         newSL = currentPrice + trailOffset;
+         if (newSL < currentSL || currentSL == 0) {
+            MqlTradeRequest req = {};
+            MqlTradeResult res = {};
+            req.action = TRADE_ACTION_SLTP;
+            req.position = ticket;
+            req.symbol = PositionGetString(POSITION_SYMBOL);
+            req.sl = newSL;
+            req.tp = PositionGetDouble(POSITION_TP);
+            req.magic = (int)PositionGetInteger(POSITION_MAGIC);
+            ResetLastError();
+            if (!OrderSend(req, res)) {
+               error = "Trail Stop OrderSend failed: " + IntegerToString(GetLastError());
+               return false;
+            }
+            if (res.retcode != TRADE_RETCODE_DONE) {
+               error = "Trail Stop rejected: " + IntegerToString(res.retcode);
+               return false;
+            }
+            Print("✅ Trail Stop updated ticket=" + ticketStr + " sl=" + DoubleToString(newSL));
+            return true;
+         }
+      }
+   }
+   // No update needed
+   return true;
+}
+
+//+------------------------------------------------------------------+
+//| Execute PARTIAL_CLOSE command                                    |
+//+------------------------------------------------------------------+
+bool ExecutePartialClose(string ticketStr, double percentage, string &error) {
+   if (percentage <= 0 || percentage >= 100) { error = "Invalid percentage"; return false; }
+   ulong ticket = StringToInteger(ticketStr);
+   if (ticket <= 0) { error = "Invalid ticket"; return false; }
+   if (!PositionSelectByTicket(ticket)) { error = "Position not found"; return false; }
+
+   double fullVolume = PositionGetDouble(POSITION_VOLUME);
+   double closeVolume = NormalizeDouble(fullVolume * percentage / 100.0, 2);
+   if (closeVolume <= 0) { error = "Close volume too small"; return false; }
+
+   MqlTradeRequest req = {};
+   MqlTradeResult res = {};
+   req.action = TRADE_ACTION_DEAL;
+   req.position = ticket;
+   req.symbol = PositionGetString(POSITION_SYMBOL);
+   req.volume = closeVolume;
+   req.deviation = 50;
+   req.type = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY) ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
+   req.magic = (int)PositionGetInteger(POSITION_MAGIC);
+
+   ResetLastError();
+   if (!OrderSend(req, res)) {
+      error = "Partial close OrderSend failed: " + IntegerToString(GetLastError());
+      return false;
+   }
+   if (res.retcode != TRADE_RETCODE_DONE) {
+      error = "Partial close rejected: " + IntegerToString(res.retcode);
+      return false;
+   }
+   Print("✅ Partial closed " + DoubleToString(percentage) + "% ticket=" + ticketStr);
+   return true;
 }
 
 //+------------------------------------------------------------------+
@@ -405,6 +548,19 @@ string GetJSONValue(string json, string key) {
       result += ShortToString(c);
    }
    return result;
+}
+
+//+------------------------------------------------------------------+
+//| Full resync all positions for reconciliation                     |
+//+------------------------------------------------------------------+
+void ResyncAllTrades() {
+   int total = PositionsTotal();
+   for (int i = 0; i < total; i++) {
+      ulong ticket = PositionGetTicket(i);
+      if (ticket > 0 && PositionSelectByTicket(ticket)) {
+         SendTradeData(ticket, "RESYNC");
+      }
+   }
 }
 
 //+------------------------------------------------------------------+

@@ -3,6 +3,7 @@ package com.TradeOS.service;
 import com.TradeOS.dto.CloseTradeRequest;
 import com.TradeOS.dto.TradeRequest;
 import com.TradeOS.dto.UpdateTradeRequest;
+import com.TradeOS.entity.BrokerCommand;
 import com.TradeOS.entity.Trade;
 import com.TradeOS.entity.TradingAccount;
 import com.TradeOS.repository.BrokerCommandRepository;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.StringWriter;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -138,6 +140,7 @@ public class TradeService {
         trade.setStrategy(request.getStrategy());
         trade.setTimeframe(request.getTimeframe());
         trade.setConfidence(request.getConfidence());
+        trade.setTags(request.getTags());
 
         trade.setUserEmail(email);
 
@@ -175,6 +178,7 @@ public class TradeService {
         trade.setTimeframe(request.getTimeframe());
         trade.setConfidence(request.getConfidence());
         trade.setRiskPct(request.getRiskPct());
+        trade.setTags(request.getTags());
 
         tradeRepository.save(trade);
 
@@ -258,6 +262,14 @@ public class TradeService {
         if (trade == null) return "Trade Not Found";
         if (!"OPEN".equals(trade.getStatus())) return "Trade is not open";
 
+        if (trade.getMt5Ticket() != null && trade.getMt5AccountId() != null) {
+            String broker = findBrokerForTrade(trade);
+            brokerCommandService.createPartialCloseCommand(trade, percentage, broker, trade.getMt5AccountId());
+            trade.setStatus("closing_partial");
+            tradeRepository.save(trade);
+            return String.format("Partial close of %.0f%% queued to broker", percentage);
+        }
+
         double originalSize = trade.getPositionSize();
         double closeSize = originalSize * (percentage / 100.0);
         double remainingSize = originalSize - closeSize;
@@ -269,6 +281,42 @@ public class TradeService {
         trade.setPositionSize(remainingSize);
         tradeRepository.save(trade);
         return String.format("Closed %.0f%% of position. Remaining: %s lots", percentage, remainingSize);
+    }
+
+    public String trailStop(
+            Long tradeId,
+            double offset,
+            String email
+    ) {
+        Trade trade = tradeRepository.findByIdAndUserEmail(tradeId, email);
+        if (trade == null) return "Trade Not Found";
+        if (!"OPEN".equals(trade.getStatus())) return "Trade is not open";
+
+        if (trade.getMt5Ticket() != null && trade.getMt5AccountId() != null) {
+            brokerCommandService.createTrailStopCommand(trade, offset, findBrokerForTrade(trade), trade.getMt5AccountId());
+            trade.setStatus("trail_queued");
+            tradeRepository.save(trade);
+            return "Trail stop queued to broker";
+        }
+
+        return "Trail stop requires an MT5/MT4 connected trade";
+    }
+
+    public List<String> closeAll(String email) {
+        List<Trade> openTrades = tradeRepository.findByUserEmailAndStatus(email, "OPEN");
+        List<String> results = new ArrayList<>();
+        for (Trade trade : openTrades) {
+            if (trade.getMt5Ticket() != null && trade.getMt5AccountId() != null) {
+                String broker = findBrokerForTrade(trade);
+                brokerCommandService.createCloseCommand(trade, broker, trade.getMt5AccountId());
+                trade.setStatus("CLOSING");
+                tradeRepository.save(trade);
+                results.add("Close queued for " + trade.getSymbol() + " (ticket=" + trade.getMt5Ticket() + ")");
+            } else {
+                results.add("Skipped " + trade.getSymbol() + " — no broker connection");
+            }
+        }
+        return results;
     }
 
     public String updateSlTp(

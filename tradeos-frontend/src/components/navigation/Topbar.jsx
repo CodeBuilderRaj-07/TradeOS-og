@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ChevronDown, Sun, Moon, LogOut, Settings, User, Camera, Bot } from "lucide-react";
+import { Search, ChevronDown, Sun, Moon, LogOut, Settings, User, Camera, Bot, SwitchCamera } from "lucide-react";
 
 import { motion, AnimatePresence } from "framer-motion";
 
 import { useAuthStore } from "@/store/authStore";
 import { useThemeStore } from "@/store/themeStore";
+import { useAccountStore } from "@/store/accountStore";
 import { getAvatar, setAvatar, removeAvatar } from "@/services/tokenService";
 import PnLTicker from "@/components/navigation/PnLTicker";
 
@@ -19,15 +20,25 @@ export default function Topbar({ setMobileOpen, onAiChatToggle }) {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const { theme, toggleTheme } = useThemeStore();
+  const { accounts, activeAccount, setActiveAccount, fetchAccounts } = useAccountStore();
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef();
   const avatarUrl = getAvatar();
   const initials = user?.fullName
     ? user.fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "T";
 
   useEffect(() => {
+    fetchAccounts();
+  }, []);
+
+  useEffect(() => {
     const handleClick = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMenuOpen(false);
+      }
+      if (accountMenuRef.current && !accountMenuRef.current.contains(e.target)) {
+        setAccountMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClick);
@@ -111,10 +122,60 @@ export default function Topbar({ setMobileOpen, onAiChatToggle }) {
         {/* P&L TICKER */}
         <PnLTicker />
 
-        {/* ACCOUNT BADGE */}
-        <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 backdrop-blur-xl">
-          <div className="h-2 w-2 rounded-full bg-success animate-pulse-soft shadow-md shadow-success/30" />
-          <span className="text-xs font-medium text-foreground/80">{user?.fullName || "Main Account"}</span>
+        {/* ACCOUNT SWITCHER */}
+        <div className="relative" ref={accountMenuRef}>
+          <div
+            onClick={() => setAccountMenuOpen((p) => !p)}
+            className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 backdrop-blur-xl cursor-pointer hover:bg-card/80 hover:border-primary/20 transition-all duration-200"
+          >
+            <div className="h-2 w-2 rounded-full bg-success animate-pulse-soft shadow-md shadow-success/30" />
+            <span className="text-xs font-medium text-foreground/80 max-w-[100px] truncate">{activeAccount?.name || user?.fullName || "Account"}</span>
+            <ChevronDown size={14} className={`text-muted-foreground transition-transform duration-200 shrink-0 ${accountMenuOpen ? "rotate-180" : ""}`} />
+          </div>
+
+          <AnimatePresence>
+            {accountMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                transition={{ duration: 0.15 }}
+                className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-border bg-card shadow-xl shadow-black/10 backdrop-blur-2xl overflow-hidden z-50"
+              >
+                <div className="border-b border-border px-4 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Trading Accounts</p>
+                </div>
+                {accounts.length === 0 ? (
+                  <div className="px-4 py-3 text-xs text-muted-foreground">No accounts yet</div>
+                ) : (
+                  accounts.map((acc) => (
+                    <button
+                      key={acc.id}
+                      onClick={() => { setActiveAccount(acc); setAccountMenuOpen(false); }}
+                      className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                        activeAccount?.id === acc.id
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+                      }`}
+                    >
+                      <div className={`h-2 w-2 rounded-full shrink-0 ${acc.active ? "bg-success" : "bg-muted"}`} />
+                      <div className="text-left min-w-0">
+                        <p className="text-sm font-medium truncate">{acc.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{acc.broker} · {acc.currency}</p>
+                      </div>
+                    </button>
+                  ))
+                )}
+                <button
+                  onClick={() => { navigate("/settings"); setAccountMenuOpen(false); }}
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-xs text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors border-t border-border"
+                >
+                  <Settings size={14} />
+                  Manage Accounts
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* USER DROPDOWN */}

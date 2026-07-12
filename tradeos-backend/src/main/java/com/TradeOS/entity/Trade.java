@@ -49,7 +49,17 @@ public class Trade {
     @Column(name = "mt5_account_id")
     private String mt5AccountId;
 
+    private String tags;
+
+    private Double currentPrice;
+
     private LocalDateTime createdAt;
+
+    public void setTags(String tags) { this.tags = tags; }
+    public String getTags() { return tags; }
+
+    public void setCurrentPrice(Double currentPrice) { this.currentPrice = currentPrice; }
+    public Double getCurrentPrice() { return currentPrice; }
 
     public Long getId() {
         return id;

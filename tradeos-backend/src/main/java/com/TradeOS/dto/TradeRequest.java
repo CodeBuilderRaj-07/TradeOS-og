@@ -38,6 +38,11 @@ public class TradeRequest {
 
     private String confidence;
 
+    private String tags;
+
+    public String getTags() { return tags; }
+    public void setTags(String tags) { this.tags = tags; }
+
     public String getSymbol() {
         return symbol;
     }

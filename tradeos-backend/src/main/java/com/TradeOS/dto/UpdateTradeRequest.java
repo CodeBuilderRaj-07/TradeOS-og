@@ -27,6 +27,11 @@ public class UpdateTradeRequest {
 
     private double positionSize;
 
+    private String tags;
+
+    public String getTags() { return tags; }
+    public void setTags(String tags) { this.tags = tags; }
+
     public String getSymbol() { return symbol; }
     public void setSymbol(String symbol) { this.symbol = symbol; }
 

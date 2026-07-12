@@ -47,10 +47,22 @@ int OnInit() {
 //+------------------------------------------------------------------+
 void OnTick() {
    static datetime lastCheck = 0;
+   static datetime lastPriceUpdate = 0;
+   static datetime lastResync = 0;
    if (TimeCurrent() - lastCheck < 2) return;
    lastCheck = TimeCurrent();
 
    SyncTradesToBackend();
+   // Send periodic price updates for live P&L (every 5 seconds)
+   if (TimeCurrent() - lastPriceUpdate >= 5) {
+      lastPriceUpdate = TimeCurrent();
+      SyncPricesToBackend();
+   }
+   // Full reconciliation every 5 minutes
+   if (TimeCurrent() - lastResync >= 300) {
+      lastResync = TimeCurrent();
+      ResyncAllTrades();
+   }
    PollAndExecuteCommands();
 }
 
@@ -109,6 +121,12 @@ void PollAndExecuteCommands() {
       } else if (cmdType == "MOVE_BE") {
          double bePrice = StrToDouble(GetJSONValue(cmdParams, "\"sl\""));
          success = ExecuteMoveBE(cmdTicket, bePrice, errorMsg);
+      } else if (cmdType == "TRAIL_STOP") {
+         double trailOffset = StrToDouble(GetJSONValue(cmdParams, "\"offset\""));
+         success = ExecuteTrailStop(cmdTicket, trailOffset, errorMsg);
+      } else if (cmdType == "PARTIAL_CLOSE") {
+         double pct = StrToDouble(GetJSONValue(cmdParams, "\"percentage\""));
+         success = ExecutePartialClose(cmdTicket, pct, errorMsg);
       } else if (cmdType == "PLACE_ORDER") {
          string sym = GetJSONValue(cmdParams, "\"symbol\"");
          string typ = GetJSONValue(cmdParams, "\"type\"");
@@ -205,6 +223,104 @@ bool ExecutePlaceOrder(string symbol, string type, double volume, double sl, dou
 }
 
 //+------------------------------------------------------------------+
+//| Push current prices for live P&L                                 |
+//+------------------------------------------------------------------+
+void SyncPricesToBackend() {
+   int total = OrdersTotal();
+   for (int i = 0; i < total; i++) {
+      if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) {
+         if (OrderType() <= OP_SELL) {
+            SendTradeData(OrderTicket(), "PRICE_UPDATE");
+         }
+      }
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Full resync for reconciliation                                   |
+//+------------------------------------------------------------------+
+void ResyncAllTrades() {
+   int total = OrdersTotal();
+   for (int i = 0; i < total; i++) {
+      if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) {
+         if (OrderType() <= OP_SELL) {
+            SendTradeData(OrderTicket(), "RESYNC");
+         }
+      }
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Execute TRAIL_STOP command                                       |
+//+------------------------------------------------------------------+
+bool ExecuteTrailStop(string ticketStr, double trailOffset, string &error) {
+   int ticket = StrToInteger(ticketStr);
+   if (ticket <= 0) { error = "Invalid ticket"; return false; }
+   if (!OrderSelect(ticket, SELECT_BY_TICKET)) { error = "Order not found"; return false; }
+
+   double currentPrice = (OrderType() == OP_BUY) ? Bid : Ask;
+   double openPrice = OrderOpenPrice();
+   double currentSL = OrderStopLoss();
+   double newSL = currentSL;
+
+   if (OrderType() == OP_BUY) {
+      double trailFrom = (currentSL > 0 && currentSL > openPrice) ? currentSL : openPrice;
+      double distance = currentPrice - trailFrom;
+      if (distance >= trailOffset) {
+         newSL = currentPrice - trailOffset;
+         if (newSL > currentSL) {
+            ResetLastError();
+            if (!OrderModify(ticket, openPrice, newSL, OrderTakeProfit(), 0)) {
+               error = "Trail Stop modify failed: " + IntegerToString(GetLastError());
+               return false;
+            }
+            Print("Trail Stop updated ticket=" + ticketStr + " sl=" + DoubleToStr(newSL));
+            return true;
+         }
+      }
+   } else if (OrderType() == OP_SELL) {
+      double trailFrom = (currentSL > 0 && currentSL < openPrice) ? currentSL : openPrice;
+      double distance = trailFrom - currentPrice;
+      if (distance >= trailOffset) {
+         newSL = currentPrice + trailOffset;
+         if (newSL < currentSL || currentSL == 0) {
+            ResetLastError();
+            if (!OrderModify(ticket, openPrice, newSL, OrderTakeProfit(), 0)) {
+               error = "Trail Stop modify failed: " + IntegerToString(GetLastError());
+               return false;
+            }
+            Print("Trail Stop updated ticket=" + ticketStr + " sl=" + DoubleToStr(newSL));
+            return true;
+         }
+      }
+   }
+   return true;
+}
+
+//+------------------------------------------------------------------+
+//| Execute PARTIAL_CLOSE command                                    |
+//+------------------------------------------------------------------+
+bool ExecutePartialClose(string ticketStr, double percentage, string &error) {
+   if (percentage <= 0 || percentage >= 100) { error = "Invalid percentage"; return false; }
+   int ticket = StrToInteger(ticketStr);
+   if (ticket <= 0) { error = "Invalid ticket"; return false; }
+   if (!OrderSelect(ticket, SELECT_BY_TICKET)) { error = "Order not found"; return false; }
+
+   double fullLots = OrderLots();
+   double closeLots = NormalizeDouble(fullLots * percentage / 100.0, 2);
+   if (closeLots <= 0) { error = "Close volume too small"; return false; }
+
+   color arrowColor = (OrderType() == OP_BUY) ? Red : Lime;
+   ResetLastError();
+   if (!OrderClose(ticket, closeLots, OrderClosePrice(), 50, arrowColor)) {
+      error = "Partial close failed: " + IntegerToString(GetLastError());
+      return false;
+   }
+   Print("Partial closed " + DoubleToStr(percentage) + "% ticket=" + ticketStr);
+   return true;
+}
+
+//+------------------------------------------------------------------+
 //| Send trade data                                                  |
 //+------------------------------------------------------------------+
 void SendTradeData(int ticket, string status) {
@@ -213,6 +329,7 @@ void SendTradeData(int ticket, string status) {
    string symbol = OrderSymbol();
    double volume = OrderLots();
    double openPrice = OrderOpenPrice();
+   double currentPrice = (OrderType() == OP_BUY) ? Bid : Ask;
    double sl = OrderStopLoss();
    double tp = OrderTakeProfit();
    double profit = OrderProfit() + OrderSwap() + OrderCommission();
@@ -229,6 +346,7 @@ void SendTradeData(int ticket, string status) {
    payload += "\"type\":\"" + (type == 0 ? "BUY" : "SELL") + "\",";
    payload += "\"volume\":\"" + DoubleToStr(volume, 2) + "\",";
    payload += "\"open_price\":\"" + DoubleToStr(openPrice, (int)MarketInfo(symbol, MODE_DIGITS)) + "\",";
+   payload += "\"current_price\":\"" + DoubleToStr(currentPrice, (int)MarketInfo(symbol, MODE_DIGITS)) + "\",";
    payload += "\"stop_loss\":\"" + (sl == 0 ? "" : DoubleToStr(sl, (int)MarketInfo(symbol, MODE_DIGITS))) + "\",";
    payload += "\"take_profit\":\"" + (tp == 0 ? "" : DoubleToStr(tp, (int)MarketInfo(symbol, MODE_DIGITS))) + "\",";
    payload += "\"profit\":\"" + DoubleToStr(profit, 2) + "\",";

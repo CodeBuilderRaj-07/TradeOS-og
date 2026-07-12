@@ -101,6 +101,8 @@ public class BrokerSyncService {
                 closeData.put("exitPrice", trade.getExitPrice());
                 closeData.put("status", "CLOSED");
                 closeData.put("action", "CLOSED");
+                closeData.put("currentPrice", trade.getCurrentPrice());
+                closeData.put("tags", trade.getTags());
                 notificationPublisher.pushTradeUpdate(closeData);
             }
             return;
@@ -124,6 +126,7 @@ public class BrokerSyncService {
         trade.setTakeProfit(parseDouble(dto.getTakeProfit(), 0));
         trade.setPositionSize(parseDouble(dto.getVolume(), 0));
         trade.setPnl(parseDouble(dto.getProfit(), 0));
+        trade.setCurrentPrice(parseDouble(dto.getCurrentPrice(), 0));
 
         if (dto.getOpenTime() != null && !dto.getOpenTime().isEmpty()) {
             trade.setCreatedAt(parseDateTime(dto.getOpenTime()));
@@ -143,6 +146,7 @@ public class BrokerSyncService {
         tradeData.put("symbol", trade.getSymbol());
         tradeData.put("tradeType", trade.getTradeType());
         tradeData.put("entryPrice", trade.getEntryPrice());
+        tradeData.put("currentPrice", trade.getCurrentPrice());
         tradeData.put("stopLoss", trade.getStopLoss());
         tradeData.put("takeProfit", trade.getTakeProfit());
         tradeData.put("positionSize", trade.getPositionSize());

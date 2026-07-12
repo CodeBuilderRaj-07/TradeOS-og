@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -301,6 +302,24 @@ public class TradeController {
         String email = (String) httpRequest.getAttribute("email");
         double percentage = body.getOrDefault("percentage", 50.0);
         return tradeService.partialClose(id, percentage, email);
+    }
+
+    @PutMapping("/{id}/trail-stop")
+    public String trailStop(
+            @PathVariable Long id,
+            @RequestBody Map<String, Double> body,
+            HttpServletRequest httpRequest
+    ) {
+        String email = (String) httpRequest.getAttribute("email");
+        double offset = body.getOrDefault("offset", 10.0);
+        return tradeService.trailStop(id, offset, email);
+    }
+
+    @PostMapping("/close-all")
+    public ResponseEntity<?> closeAll(HttpServletRequest httpRequest) {
+        String email = (String) httpRequest.getAttribute("email");
+        List<String> results = tradeService.closeAll(email);
+        return ResponseEntity.ok(Map.of("results", results));
     }
 
     @PutMapping("/{id}/sl-tp")

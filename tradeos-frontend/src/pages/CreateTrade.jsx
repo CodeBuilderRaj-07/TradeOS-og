@@ -16,6 +16,7 @@ export default function CreateTrade() {
     stopLoss: "",
     takeProfit: "",
     pnl: "",
+    tags: "",
     status: "OPEN",
   });
 
@@ -43,6 +44,7 @@ export default function CreateTrade() {
         stopLoss: Number(formData.stopLoss),
         takeProfit: Number(formData.takeProfit),
         pnl: Number(formData.pnl),
+        tags: formData.tags || "",
       });
       successToast("Trade created successfully");
       setFormData({
@@ -52,6 +54,7 @@ export default function CreateTrade() {
         stopLoss: "",
         takeProfit: "",
         pnl: "",
+        tags: "",
         status: "OPEN",
       });
       setErrors({});
@@ -132,6 +135,14 @@ export default function CreateTrade() {
               onChange={handleChange}
               placeholder="420"
               error={errors.pnl}
+            />
+            <InputField
+              label="Tags"
+              name="tags"
+              value={formData.tags || ""}
+              onChange={handleChange}
+              placeholder="trend-following, forex, A+setup"
+              error={errors.tags}
             />
           </div>
 

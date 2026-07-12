@@ -351,3 +351,14 @@ body {
   33% { background-position: 100% 50%; }
   66% { background-position: 50% 100%; }
 }
+
+/* Print styles for PDF export */
+@media print {
+  body { background: white !important; color: black !important; }
+  .sidebar, .topbar, .fixed, button, nav, .glass { display: none !important; }
+  .print-only { display: block !important; }
+  .max-w-\[1600px\] { max-width: 100% !important; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 12px; }
+  @page { margin: 1cm; }
+}

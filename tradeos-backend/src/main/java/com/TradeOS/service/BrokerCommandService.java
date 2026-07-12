@@ -83,6 +83,34 @@ public class BrokerCommandService {
         return cmd;
     }
 
+    public BrokerCommand createTrailStopCommand(Trade trade, double offset, String broker, String accountId) {
+        BrokerCommand cmd = new BrokerCommand();
+        cmd.setAccountId(accountId);
+        cmd.setBroker(broker);
+        cmd.setTicket(trade.getMt5Ticket());
+        cmd.setCommand("TRAIL_STOP");
+        cmd.setParams("{\"offset\":" + offset + "}");
+        cmd.setStatus("PENDING");
+        cmd.setCreatedAt(LocalDateTime.now());
+        repository.save(cmd);
+        log.info("Created TRAIL_STOP command {} for trade {} (ticket={}) offset={}", cmd.getId(), trade.getId(), trade.getMt5Ticket(), offset);
+        return cmd;
+    }
+
+    public BrokerCommand createPartialCloseCommand(Trade trade, double percentage, String broker, String accountId) {
+        BrokerCommand cmd = new BrokerCommand();
+        cmd.setAccountId(accountId);
+        cmd.setBroker(broker);
+        cmd.setTicket(trade.getMt5Ticket());
+        cmd.setCommand("PARTIAL_CLOSE");
+        cmd.setParams("{\"percentage\":" + percentage + "}");
+        cmd.setStatus("PENDING");
+        cmd.setCreatedAt(LocalDateTime.now());
+        repository.save(cmd);
+        log.info("Created PARTIAL_CLOSE command {} for trade {} (ticket={}) {}%", cmd.getId(), trade.getId(), trade.getMt5Ticket(), percentage);
+        return cmd;
+    }
+
     public BrokerCommand createPlaceOrderCommand(Trade trade, String broker, String accountId) {
         BrokerCommand cmd = new BrokerCommand();
         cmd.setAccountId(accountId);

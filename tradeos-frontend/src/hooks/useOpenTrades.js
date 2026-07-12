@@ -13,8 +13,8 @@ export function useOpenTrades() {
       const response = await API.get("/trades/open");
       return response.data || [];
     },
-    refetchInterval: 30000,
-    staleTime: 10000,
+    refetchInterval: 15000,
+    staleTime: 5000,
   });
 
   useEffect(() => {

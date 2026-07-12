@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/animations/stagger"
-import { ArrowUpRight, ArrowDownRight, Search, Plus, ChevronLeft, ChevronRight, Download, RefreshCw } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Search, Plus, ChevronLeft, ChevronRight, Download, RefreshCw, Printer } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
 import API from "@/services/api";
 import { errorToast, successToast } from "@/services/toastService";
@@ -125,6 +125,9 @@ export default function Journal() {
           }} className="flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-medium text-foreground hover:bg-card/80 transition-colors">
             <Download size={14} />
             Export
+          </button>
+          <button onClick={() => window.print()} className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground transition-colors" title="Print / PDF">
+            <Printer size={14} />
           </button>
           <button onClick={() => navigate("/new-trade")} className="flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
             <Plus size={16} />

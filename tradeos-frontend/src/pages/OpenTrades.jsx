@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowUpRight, ArrowDownRight, TrendingDown, Plus, ChevronLeft, ChevronRight, RefreshCw, Edit3, Shield, Scissors, Check, X } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, TrendingDown, Plus, ChevronLeft, ChevronRight, RefreshCw, Edit3, Shield, Scissors, Check, X, Activity, XCircle, Tag } from "lucide-react";
 import { motion } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/animations/stagger"
 import GlassPanel from "@/components/ui/GlassPanel";
@@ -33,6 +33,13 @@ export default function OpenTrades() {
   const [editingSlTp, setEditingSlTp] = useState(null);
   const [editSl, setEditSl] = useState("");
   const [editTp, setEditTp] = useState("");
+  const [closeAllConfirm, setCloseAllConfirm] = useState(false);
+  const [closeAllLoading, setCloseAllLoading] = useState(false);
+  const [trailStopId, setTrailStopId] = useState(null);
+  const [trailOffset, setTrailOffset] = useState("10");
+  const [trailLoading, setTrailLoading] = useState(false);
+  const [partialCloseId, setPartialCloseId] = useState(null);
+  const [partialLoading, setPartialLoading] = useState(false);
 
   const handleMoveToBe = async (tradeId) => {
     try {
@@ -58,6 +65,49 @@ export default function OpenTrades() {
     setEditingSlTp(trade.id);
     setEditSl(trade.stopLoss || "");
     setEditTp(trade.takeProfit || "");
+  };
+
+  const handleCloseAll = async () => {
+    try {
+      setCloseAllLoading(true);
+      const res = await API.post("/trades/close-all");
+      const results = res.data?.results || [];
+      results.forEach((r) => successToast(r));
+      setCloseAllConfirm(false);
+      fetchOpenTrades();
+    } catch {
+      errorToast("Failed to close all trades");
+    } finally {
+      setCloseAllLoading(false);
+    }
+  };
+
+  const handleTrailStop = async (tradeId) => {
+    try {
+      setTrailLoading(true);
+      await API.put(`/trades/${tradeId}/trail-stop`, { offset: Number(trailOffset) });
+      successToast(`Trail stop activated (offset: ${trailOffset})`);
+      setTrailStopId(null);
+      fetchOpenTrades();
+    } catch {
+      errorToast("Failed to set trail stop");
+    } finally {
+      setTrailLoading(false);
+    }
+  };
+
+  const handlePartialClosePct = async (tradeId, pct) => {
+    try {
+      setPartialLoading(true);
+      await API.put(`/trades/${tradeId}/partial-close`, { percentage: pct });
+      successToast(`Closing ${pct}%`);
+      setPartialCloseId(null);
+      fetchOpenTrades();
+    } catch {
+      errorToast("Failed to partial close");
+    } finally {
+      setPartialLoading(false);
+    }
   };
 
   const saveSlTp = async (tradeId) => {
@@ -126,6 +176,15 @@ export default function OpenTrades() {
           >
             <RefreshCw size={16} />
           </button>
+          {trades.length > 0 && (
+            <button
+              onClick={() => setCloseAllConfirm(true)}
+              className="flex h-11 items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-4 text-sm font-semibold text-red-400 hover:bg-red-500/20 transition-colors"
+            >
+              <XCircle size={16} />
+              Close All
+            </button>
+          )}
           <button
             onClick={() => navigate("/new-trade")}
             className="flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -180,10 +239,26 @@ export default function OpenTrades() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3 text-center">
+                    {/* Tags */}
+                    {trade.tags && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {trade.tags.split(",").map((tag, ti) => (
+                          <span key={ti} className="flex items-center gap-1 rounded-md border border-primary/10 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary">
+                            <Tag size={10} />
+                            {tag.trim()}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-4 gap-2 text-center">
                       <div>
                         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Entry</p>
                         <p className="mt-1 text-sm font-mono font-medium text-foreground">${trade.entryPrice}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Current</p>
+                        <p className="mt-1 text-sm font-mono font-medium text-foreground/80">${trade.currentPrice || "—"}</p>
                       </div>
                       <div>
                         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Stop Loss</p>
@@ -255,13 +330,71 @@ export default function OpenTrades() {
                           >
                             <Shield size={14} />
                           </button>
-                          <button
-                            onClick={() => handlePartialClose(trade.id, 50)}
-                            className="flex h-10 w-10 items-center justify-center rounded-lg border border-purple-500/20 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors"
-                            title="Close 50%"
-                          >
-                            <Scissors size={14} />
-                          </button>
+                          {trailStopId === trade.id ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                step="any"
+                                value={trailOffset}
+                                onChange={(e) => setTrailOffset(e.target.value)}
+                                className="w-16 h-10 rounded-lg border border-border bg-background px-2 text-xs font-mono text-foreground outline-none text-center"
+                                placeholder="10"
+                                autoFocus
+                              />
+                              <button
+                                onClick={() => handleTrailStop(trade.id)}
+                                disabled={trailLoading}
+                                className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
+                                title="Confirm Trail Stop"
+                              >
+                                <Check size={14} />
+                              </button>
+                              <button
+                                onClick={() => setTrailStopId(null)}
+                                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground transition-colors"
+                                title="Cancel"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => { setTrailStopId(trade.id); setTrailOffset("10"); }}
+                              className="flex h-10 w-10 items-center justify-center rounded-lg border border-sky-500/20 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 transition-colors"
+                              title="Trail Stop"
+                            >
+                              <Activity size={14} />
+                            </button>
+                          )}
+                          {partialCloseId === trade.id ? (
+                            <div className="flex items-center gap-1">
+                              {[25, 50, 75].map((pct) => (
+                                <button
+                                  key={pct}
+                                  onClick={() => handlePartialClosePct(trade.id, pct)}
+                                  disabled={partialLoading}
+                                  className="h-10 w-10 rounded-lg bg-purple-500/20 text-xs font-bold text-purple-400 hover:bg-purple-500/30 transition-colors"
+                                >
+                                  {pct}%
+                                </button>
+                              ))}
+                              <button
+                                onClick={() => setPartialCloseId(null)}
+                                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground transition-colors"
+                                title="Cancel"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setPartialCloseId(trade.id)}
+                              className="flex h-10 w-10 items-center justify-center rounded-lg border border-purple-500/20 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors"
+                              title="Partial Close"
+                            >
+                              <Scissors size={14} />
+                            </button>
+                          )}
                           <button
                             onClick={() => closeTrade(trade.id)}
                             className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
@@ -318,6 +451,41 @@ export default function OpenTrades() {
         </>
       )}
     </motion.div>
+
+      {/* Close All Confirmation Dialog */}
+      {closeAllConfirm && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-full max-w-sm rounded-xl border border-border bg-card p-6"
+          >
+            <h2 className="text-lg font-bold text-foreground mb-2">Close All Trades?</h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              This will queue close commands for all {trades.length} open position{trades.length !== 1 ? "s" : ""} via your broker.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setCloseAllConfirm(false)}
+                className="flex-1 rounded-lg border border-border bg-card py-3 text-sm font-semibold text-foreground hover:bg-sidebar-accent transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCloseAll}
+                disabled={closeAllLoading}
+                className="flex-1 rounded-lg bg-destructive py-3 text-sm font-semibold text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50"
+              >
+                {closeAllLoading ? "Closing..." : "Close All"}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </motion.div>
   );
 }
