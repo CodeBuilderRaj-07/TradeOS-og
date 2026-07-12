@@ -369,6 +369,30 @@ export default function Settings() {
               </div>
             )}
           </GlassPanel>
+
+          {/* Theme */}
+          <GlassPanel className="p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-500/10">
+                <Sun size={22} className="text-amber-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-foreground">Appearance</h3>
+                <p className="text-sm text-muted-foreground">Toggle between dark and light mode</p>
+              </div>
+            </div>
+
+            <button
+              onClick={toggleTheme}
+              className="flex w-full items-center justify-between rounded-lg border border-border bg-background/50 px-5 py-4 transition-colors hover:bg-background/80"
+            >
+              <div className="flex items-center gap-3">
+                {theme === "dark" ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} className="text-blue-400" />}
+                <span className="text-sm font-medium text-foreground">{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+              </div>
+              <span className="text-xs font-medium text-muted-foreground capitalize">{theme}</span>
+            </button>
+          </GlassPanel>
         </div>
 
         {/* Right - CSV Import */}
@@ -486,30 +510,6 @@ export default function Settings() {
                 Sign Out
               </button>
             </div>
-          </GlassPanel>
-
-          {/* Theme */}
-          <GlassPanel className="p-6">
-            <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-500/10">
-                <Sun size={22} className="text-amber-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-foreground">Appearance</h3>
-                <p className="text-sm text-muted-foreground">Toggle between dark and light mode</p>
-              </div>
-            </div>
-
-            <button
-              onClick={toggleTheme}
-              className="flex w-full items-center justify-between rounded-lg border border-border bg-background/50 px-5 py-4 transition-colors hover:bg-background/80"
-            >
-              <div className="flex items-center gap-3">
-                {theme === "dark" ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} className="text-blue-400" />}
-                <span className="text-sm font-medium text-foreground">{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
-              </div>
-              <span className="text-xs font-medium text-muted-foreground capitalize">{theme}</span>
-            </button>
           </GlassPanel>
         </div>
       </motion.div>
