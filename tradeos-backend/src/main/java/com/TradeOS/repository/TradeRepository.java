@@ -50,4 +50,6 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
 
 
 List<Trade> findByStatus(String status);
+
+List<Trade> findByUserEmailAndMt5Ticket(String userEmail, String mt5Ticket);
 }

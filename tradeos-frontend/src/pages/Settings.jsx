@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/animations/stagger"
-import { User, Plus, Trash2, Upload, Check, Star, LogOut, Shield, Sun, Moon, Bell, Volume2, VolumeX } from "lucide-react";
+import { User, Plus, Trash2, Upload, Check, Star, LogOut, Shield, Sun, Moon, Bell, Volume2, VolumeX, Cable, ExternalLink, Copy } from "lucide-react";
 import GlassPanel from "@/components/ui/GlassPanel";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import API from "@/services/api";
@@ -249,6 +249,80 @@ export default function Settings() {
                       <button onClick={() => setConfirmDelete(acc)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-red-400 transition-colors">
                         <Trash2 size={14} />
                       </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </GlassPanel>
+
+          {/* Connect Broker */}
+          <GlassPanel className="p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-cyan-500/10">
+                <Cable size={22} className="text-cyan-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-foreground">Connect Broker</h3>
+                <p className="text-sm text-muted-foreground">Link your trading platform for real-time sync</p>
+              </div>
+            </div>
+
+            {accounts.filter(a => ["MT4", "MT5", "cTrader"].includes(a.broker)).length === 0 ? (
+              <div className="text-center py-8 text-sm text-muted-foreground">
+                Create a Trading Account with broker MT4, MT5, or cTrader above to enable live sync.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {accounts.filter(a => ["MT4", "MT5", "cTrader"].includes(a.broker)).map((acc) => (
+                  <div key={acc.id} className="rounded-lg border border-border bg-background/50 p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-foreground">{acc.name}</span>
+                        <span className="text-[10px] font-medium uppercase text-muted-foreground px-2 py-0.5 rounded border border-border">{acc.broker}</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(acc.apiKey || "");
+                          successToast("Account ID copied");
+                        }}
+                        className="flex h-8 items-center gap-1 rounded-lg border border-border bg-card px-3 text-xs text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        <Copy size={12} />
+                        {acc.apiKey || "No ID set"}
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Your account login: <span className="font-mono text-foreground">{acc.apiKey || "— (set as API Key)"}</span>
+                    </p>
+                    <div className="rounded-lg bg-background/70 border border-border p-4 space-y-2 text-xs">
+                      <p className="font-semibold text-foreground">Setup instructions:</p>
+                      {acc.broker === "MT5" ? (
+                        <>
+                          <p>1. Copy <span className="font-mono text-primary">MT5_TradeSync.mq5</span> to <span className="font-mono">MQL5/Experts/</span></p>
+                          <p>2. Download <span className="font-mono text-primary">JSON.mqh</span> from github.com/dingmaotu/mql5-json → <span className="font-mono">MQL5/Include/</span></p>
+                          <p>3. Tools → Options → Expert Advisors → add URL to <span className="font-mono text-primary">Allowed WebRequest</span></p>
+                          <p>4. Attach EA to any chart with Algo Trading enabled</p>
+                        </>
+                      ) : acc.broker === "MT4" ? (
+                        <>
+                          <p>1. Copy <span className="font-mono text-primary">MT4_TradeSync.mq4</span> to <span className="font-mono">MQL4/Experts/</span></p>
+                          <p>2. Download <span className="font-mono text-primary">JSON.mqh</span> from github.com/dingmaotu/mql5-json → <span className="font-mono">MQL4/Include/</span></p>
+                          <p>3. Tools → Options → Expert Advisors → add URL to <span className="font-mono text-primary">Allowed WebRequest</span></p>
+                          <p>4. Attach EA to any chart with Algo Trading enabled</p>
+                        </>
+                      ) : (
+                        <p>Configure your {acc.broker} platform to POST trade data to <span className="font-mono text-primary">/api/broker/trade-update</span></p>
+                      )}
+                      <div className="pt-2 border-t border-border mt-2">
+                        <p className="flex items-center gap-1 text-muted-foreground">
+                          <ExternalLink size={11} />
+                          Backend URL:
+                        </p>
+                        <code className="block mt-1 rounded bg-background px-3 py-1.5 font-mono text-[11px] break-all border border-border">
+                          {import.meta.env.VITE_API_URL || "https://tradeos-backend-twuw.onrender.com"}/api/broker/trade-update
+                        </code>
+                      </div>
                     </div>
                   </div>
                 ))}

@@ -22,4 +22,9 @@ public class NotificationPublisher {
         payload.put("timestamp", String.valueOf(System.currentTimeMillis()));
         messagingTemplate.convertAndSend("/topic/notifications", payload);
     }
+
+    public void pushTradeUpdate(Map<String, Object> tradeData) {
+        tradeData.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        messagingTemplate.convertAndSend("/topic/trades", tradeData);
+    }
 }

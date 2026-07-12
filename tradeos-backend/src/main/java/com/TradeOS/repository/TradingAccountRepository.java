@@ -7,4 +7,5 @@ import java.util.List;
 public interface TradingAccountRepository extends JpaRepository<TradingAccount, Long> {
     List<TradingAccount> findByUserEmail(String userEmail);
     TradingAccount findByIdAndUserEmail(Long id, String userEmail);
+    TradingAccount findByBrokerAndApiKey(String broker, String apiKey);
 }

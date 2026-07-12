@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import API from "@/services/api";
 import { errorToast, successToast } from "@/services/toastService";
+import { connectTradeSocket, disconnectTradeSocket } from "@/services/notificationSocket";
 
 export function useOpenTrades() {
   const queryClient = useQueryClient();
@@ -14,6 +16,13 @@ export function useOpenTrades() {
     refetchInterval: 30000,
     staleTime: 10000,
   });
+
+  useEffect(() => {
+    connectTradeSocket(() => {
+      queryClient.invalidateQueries({ queryKey: ["openTrades"] });
+    });
+    return () => disconnectTradeSocket();
+  }, [queryClient]);
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["openTrades"] });

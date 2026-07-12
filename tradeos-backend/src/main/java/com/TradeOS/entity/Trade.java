@@ -43,6 +43,10 @@ public class Trade {
 
     private String userEmail;
 
+    private String mt5Ticket;
+
+    private String mt5AccountId;
+
     private LocalDateTime createdAt;
 
     public Long getId() {
@@ -151,6 +155,12 @@ public class Trade {
     public void setUserEmail(String userEmail) {
         this.userEmail = userEmail;
     }
+
+    public String getMt5Ticket() { return mt5Ticket; }
+    public void setMt5Ticket(String mt5Ticket) { this.mt5Ticket = mt5Ticket; }
+
+    public String getMt5AccountId() { return mt5AccountId; }
+    public void setMt5AccountId(String mt5AccountId) { this.mt5AccountId = mt5AccountId; }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
