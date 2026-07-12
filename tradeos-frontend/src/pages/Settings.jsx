@@ -158,7 +158,7 @@ export default function Settings() {
               </div>
               <button
                 onClick={() => setShowForm(!showForm)}
-                className="flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90 active:scale-[0.97] transition-all duration-200"
               >
                 <Plus size={14} />
                 {showForm ? "Cancel" : "Add"}
@@ -215,7 +215,7 @@ export default function Settings() {
                     <input type="number" step="0.1" value={formData.defaultRisk} onChange={(e) => setFormData({ ...formData, defaultRisk: e.target.value })} className="h-11 w-full rounded-lg border border-border bg-background/70 px-4 text-sm font-mono outline-none focus:border-primary/30" />
                   </div>
                 </div>
-                <button onClick={handleCreate} disabled={!formData.name} className="h-11 w-full rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50">
+                <button onClick={handleCreate} disabled={!formData.name} className="h-11 w-full rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all duration-200 disabled:opacity-50">
                   Create Account
                 </button>
               </motion.div>

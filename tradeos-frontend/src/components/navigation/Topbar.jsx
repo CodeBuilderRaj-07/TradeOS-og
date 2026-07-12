@@ -93,7 +93,7 @@ export default function Topbar({ setMobileOpen, onAiChatToggle }) {
         {/* AI CHAT TOGGLE */}
         <button
           onClick={onAiChatToggle}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-all duration-300 hover:border-primary/20 hover:text-primary hover:shadow-glow"
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-all duration-300 hover:border-primary/20 hover:text-primary hover:shadow-glow active:scale-95"
           title="AI Trading Assistant"
         >
           <Bot size={16} />

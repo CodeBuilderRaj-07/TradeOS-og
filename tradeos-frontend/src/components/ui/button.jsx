@@ -1,5 +1,6 @@
 import { forwardRef } from "react"
 import { motion } from "framer-motion"
+import { Loader2 } from "lucide-react"
 
 const buttonVariants = {
   default:
@@ -33,6 +34,9 @@ const Button = forwardRef(
       className = "",
       variant = "default",
       size = "default",
+      loading = false,
+      disabled = false,
+      children,
       asChild = false,
       ...props
     },
@@ -45,9 +49,13 @@ const Button = forwardRef(
         ref={ref}
         whileHover={{ y: -1 }}
         whileTap={{ scale: 0.98 }}
+        disabled={disabled || loading}
         className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 ${buttonVariants[variant]} ${buttonSizes[size]} ${className}`}
         {...props}
-      />
+      >
+        {loading && <Loader2 size={16} className="animate-spin shrink-0" />}
+        {children}
+      </Comp>
     )
   }
 )

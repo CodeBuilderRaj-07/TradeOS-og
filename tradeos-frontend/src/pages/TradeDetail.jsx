@@ -194,9 +194,9 @@ export default function TradeDetail() {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex h-10 items-center gap-2 rounded-lg bg-emerald-500 px-4 text-xs font-semibold text-white hover:bg-emerald-600 transition-colors disabled:opacity-50"
+              className="flex h-10 items-center gap-2 rounded-lg bg-emerald-500 px-4 text-xs font-semibold text-white hover:bg-emerald-600 active:scale-[0.97] transition-all duration-200 disabled:opacity-50"
             >
-              <Check size={16} />
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={16} />}
               {saving ? "Saving..." : "Save"}
             </button>
           ) : (
@@ -382,8 +382,9 @@ export default function TradeDetail() {
                 <button
                   onClick={handleClose}
                   disabled={closing || !closePrice}
-                  className="h-12 w-full rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  className="h-12 w-full rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all duration-200 disabled:opacity-50"
                 >
+                  {closing ? <Loader2 size={16} className="animate-spin" /> : null}
                   {closing ? "Closing..." : "Confirm Close"}
                 </button>
               </div>

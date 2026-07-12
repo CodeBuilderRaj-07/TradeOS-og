@@ -430,17 +430,19 @@ export default function AlgoBuilder() {
             <button
               onClick={() => handleSave(false)}
               disabled={saving || !formData.name}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all duration-200 disabled:opacity-50"
             >
               <Save size={16} />
+              {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
               {saving ? "Saving..." : "Save Strategy"}
             </button>
             <button
               onClick={() => handleSave(true)}
               disabled={saving || !formData.name}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 text-sm font-semibold text-white hover:from-green-500 hover:to-emerald-500 transition-all disabled:opacity-50"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 text-sm font-semibold text-white hover:from-green-500 hover:to-emerald-500 active:scale-[0.98] transition-all duration-200 disabled:opacity-50"
             >
               <Play size={16} />
+              {saving ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
               {saving ? "Saving..." : "Save & Start Algo"}
             </button>
           </div>

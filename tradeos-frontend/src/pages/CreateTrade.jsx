@@ -152,8 +152,9 @@ export default function CreateTrade() {
           <button
             onClick={createTrade}
             disabled={loading}
-            className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-bold text-primary-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-70"
+            className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-bold text-primary-foreground transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
           >
+            {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
             {loading ? "Creating Trade..." : "Create Trade"}
           </button>
         </GlassPanel>

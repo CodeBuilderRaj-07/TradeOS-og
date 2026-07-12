@@ -142,6 +142,46 @@ body {
   background: hsl(var(--muted-foreground) / 0.35);
 }
 
+/* Button utility classes */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  outline: none;
+}
+.btn:focus-visible {
+  box-shadow: 0 0 0 2px hsl(var(--ring)), 0 0 0 4px hsl(var(--background));
+}
+.btn:active {
+  transform: scale(0.98);
+}
+.btn:disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.btn-icon:active {
+  transform: scale(0.95);
+}
+.btn-icon:disabled {
+  pointer-events: none;
+  opacity: 0.4;
+}
+
 /* Utility classes */
 .glass {
   background: hsl(var(--card) / 0.55);
