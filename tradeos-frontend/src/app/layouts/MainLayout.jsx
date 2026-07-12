@@ -7,6 +7,7 @@ import Topbar from "@/components/navigation/Topbar";
 import BottomNav from "@/components/navigation/BottomNav";
 import AiChatSidebar from "@/components/navigation/AiChatSidebar";
 import ScrollToTop from "@/components/common/ScrollToTop";
+import CursorGlow from "@/components/common/CursorGlow";
 
 export default function MainLayout({ children }) {
   useKeyboardShortcuts();
@@ -36,6 +37,7 @@ export default function MainLayout({ children }) {
       <ScrollToTop />
 
       <AiChatSidebar open={aiChatOpen} onClose={() => setAiChatOpen(false)} />
+      <CursorGlow />
     </div>
   );
 }
