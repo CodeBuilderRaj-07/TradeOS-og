@@ -43,8 +43,10 @@ public class Trade {
 
     private String userEmail;
 
+    @Column(name = "mt5_ticket")
     private String mt5Ticket;
 
+    @Column(name = "mt5_account_id")
     private String mt5AccountId;
 
     private LocalDateTime createdAt;

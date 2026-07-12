@@ -26,6 +26,7 @@ public class User {
 
     private String providerId;
 
+    @Column(name = "api_token")
     private String apiToken;
 
     public Long getId() {
