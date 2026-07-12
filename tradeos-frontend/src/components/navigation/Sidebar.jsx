@@ -41,9 +41,10 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
             {!collapsed && (
               <button
                 onClick={() => { setMobileOpen(false); }}
+                aria-label="Close sidebar"
                 className="flex h-8 w-8 items-center justify-center rounded-lg border border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground/50 hover:bg-sidebar-accent/80 lg:hidden"
               >
-                <X size={14} />
+                <X size={14} aria-hidden="true" />
               </button>
             )}
           </div>
@@ -97,9 +98,10 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
 
           <button
             onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors hover:scale-110 active:scale-95 max-lg:hidden"
           >
-            {collapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
+            {collapsed ? <PanelLeft size={18} aria-hidden="true" /> : <PanelLeftClose size={18} aria-hidden="true" />}
           </button>
         </div>
       </aside>
