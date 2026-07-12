@@ -1,6 +1,7 @@
 package com.TradeOS.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -21,6 +22,8 @@ public class User {
     private String role = "TRADER";
 
     private String resetToken;
+
+    private LocalDateTime resetTokenExpiry;
 
     private String authProvider;
 
@@ -83,6 +86,14 @@ public class User {
 
     public void setResetToken(String resetToken) {
         this.resetToken = resetToken;
+    }
+
+    public LocalDateTime getResetTokenExpiry() {
+        return resetTokenExpiry;
+    }
+
+    public void setResetTokenExpiry(LocalDateTime resetTokenExpiry) {
+        this.resetTokenExpiry = resetTokenExpiry;
     }
 
     public String getAuthProvider() {

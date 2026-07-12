@@ -93,6 +93,14 @@ public class AuthController {
         return userService.forgotPassword(body.getOrDefault("email", ""));
     }
 
+    @PostMapping("/verify-otp")
+    public Map<String, Object> verifyOtp(@RequestBody Map<String, String> body) {
+        return userService.verifyOtp(
+                body.getOrDefault("email", ""),
+                body.getOrDefault("otp", "")
+        );
+    }
+
     @PostMapping("/reset-password")
     public Map<String, Object> resetPassword(@RequestBody Map<String, String> body) {
         return userService.resetPassword(

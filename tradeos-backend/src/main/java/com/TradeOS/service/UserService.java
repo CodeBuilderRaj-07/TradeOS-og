@@ -5,25 +5,43 @@ import com.TradeOS.dto.RegisterRequest;
 import com.TradeOS.entity.User;
 import com.TradeOS.repository.UserRepository;
 import com.TradeOS.security.JwtUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 @Service
 public class UserService {
 
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
+
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final JavaMailSender mailSender;
+
+    @Value("${tradeos.otp.expiry-minutes:15}")
+    private int otpExpiryMinutes;
+
+    @Value("${SMTP_USER:}")
+    private String smtpUser;
 
     public UserService(UserRepository userRepository,
                        BCryptPasswordEncoder passwordEncoder,
-                       JwtUtil jwtUtil) {
+                       JwtUtil jwtUtil,
+                       JavaMailSender mailSender) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.mailSender = mailSender;
     }
 
     public Map<String, Object> handleOAuthLogin(String provider, String providerId, String email, String name) {
@@ -124,24 +142,6 @@ public class UserService {
         return "Profile updated successfully";
     }
 
-    public Map<String, Object> forgotPassword(String email) {
-        Map<String, Object> result = new HashMap<>();
-        User user = userRepository.findByEmail(email);
-        if (user == null) {
-            result.put("error", "User not found with this email");
-            return result;
-        }
-
-        String resetToken = java.util.UUID.randomUUID().toString();
-        user.setResetToken(resetToken);
-        userRepository.save(user);
-
-        result.put("success", true);
-        result.put("message", "Reset token generated. In production, this would be emailed.");
-        result.put("resetToken", resetToken);
-        return result;
-    }
-
     public String generateApiToken(String email) {
         User user = userRepository.findByEmail(email);
         if (user == null) return null;
@@ -157,6 +157,68 @@ public class UserService {
         return userRepository.findByApiToken(apiToken);
     }
 
+    public Map<String, Object> forgotPassword(String email) {
+        Map<String, Object> result = new HashMap<>();
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            result.put("error", "User not found with this email");
+            return result;
+        }
+
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        user.setResetToken(otp);
+        user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(otpExpiryMinutes));
+        userRepository.save(user);
+
+        String body = "Your TradeOS password reset OTP is: " + otp + "\n\n" +
+                      "This code expires in " + otpExpiryMinutes + " minutes.\n\n" +
+                      "If you did not request this, please ignore this email.";
+
+        if (smtpUser != null && !smtpUser.isBlank()) {
+            try {
+                SimpleMailMessage msg = new SimpleMailMessage();
+                msg.setTo(email);
+                msg.setSubject("TradeOS Password Reset OTP");
+                msg.setText(body);
+                mailSender.send(msg);
+                log.info("OTP email sent to {}", email);
+            } catch (Exception e) {
+                log.warn("Failed to send OTP email to {}: {}", email, e.getMessage());
+            }
+        } else {
+            log.info("OTP for {} (no SMTP configured): {}", email, otp);
+        }
+
+        result.put("success", true);
+        result.put("message", "OTP sent to your email");
+        return result;
+    }
+
+    public Map<String, Object> verifyOtp(String email, String otp) {
+        Map<String, Object> result = new HashMap<>();
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            result.put("error", "User not found");
+            return result;
+        }
+        if (user.getResetToken() == null || !user.getResetToken().equals(otp)) {
+            result.put("error", "Invalid OTP");
+            return result;
+        }
+        if (user.getResetTokenExpiry() == null || LocalDateTime.now().isAfter(user.getResetTokenExpiry())) {
+            result.put("error", "OTP has expired. Request a new one.");
+            return result;
+        }
+
+        String resetToken = java.util.UUID.randomUUID().toString();
+        user.setResetToken(resetToken);
+        userRepository.save(user);
+
+        result.put("success", true);
+        result.put("resetToken", resetToken);
+        return result;
+    }
+
     public Map<String, Object> resetPassword(String token, String newPassword) {
         Map<String, Object> result = new HashMap<>();
 
@@ -167,8 +229,14 @@ public class UserService {
             return result;
         }
 
+        if (user.getResetTokenExpiry() != null && LocalDateTime.now().isAfter(user.getResetTokenExpiry())) {
+            result.put("error", "Reset session expired. Please start over.");
+            return result;
+        }
+
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setResetToken(null);
+        user.setResetTokenExpiry(null);
         userRepository.save(user);
 
         result.put("success", true);
