@@ -8,13 +8,17 @@ import com.TradeOS.security.JwtUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
@@ -27,25 +31,24 @@ public class UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final JavaMailSender mailSender;
+    private final RestTemplate restTemplate;
 
     @Value("${tradeos.otp.expiry-minutes:15}")
     private int otpExpiryMinutes;
 
-    @Value("${SMTP_USER:}")
-    private String smtpUser;
+    @Value("${SENDGRID_API_KEY:}")
+    private String sendgridApiKey;
 
-    @Value("${FRONTEND_URL:https://tradeos-frontend.onrender.com}")
-    private String frontendUrl;
+    @Value("${SMTP_USER:rajkumarpattnail@gmail.com}")
+    private String fromEmail;
 
     public UserService(UserRepository userRepository,
                        BCryptPasswordEncoder passwordEncoder,
-                       JwtUtil jwtUtil,
-                       JavaMailSender mailSender) {
+                       JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
-        this.mailSender = mailSender;
+        this.restTemplate = new RestTemplate();
     }
 
     public Map<String, Object> handleOAuthLogin(String provider, String providerId, String email, String name) {
@@ -180,26 +183,38 @@ public class UserService {
                       "If you did not request this, please ignore this email.";
 
         boolean emailSent = false;
-        if (smtpUser != null && !smtpUser.isBlank()) {
+        if (sendgridApiKey != null && !sendgridApiKey.isBlank()) {
             try {
-                SimpleMailMessage msg = new SimpleMailMessage();
-                msg.setTo(email);
-                msg.setSubject("TradeOS Password Reset OTP");
-                msg.setText(body);
-                mailSender.send(msg);
-                log.info("OTP email sent to {}", email);
-                emailSent = true;
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setBearerAuth(sendgridApiKey);
+
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("personalizations", List.of(Map.of("to", List.of(Map.of("email", email)))));
+                payload.put("from", Map.of("email", fromEmail));
+                payload.put("subject", "TradeOS Password Reset OTP");
+                payload.put("content", List.of(Map.of("type", "text/plain", "value", body)));
+
+                HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
+                ResponseEntity<String> response = restTemplate.postForEntity(
+                    "https://api.sendgrid.com/v3/mail/send", request, String.class);
+
+                if (response.getStatusCode().is2xxSuccessful()) {
+                    log.info("OTP email sent to {} via SendGrid", email);
+                    emailSent = true;
+                } else {
+                    log.warn("SendGrid returned {} for {}", response.getStatusCode(), email);
+                }
             } catch (Exception e) {
-                log.warn("Failed to send OTP email to {}: {}", email, e.getMessage());
+                log.warn("Failed to send OTP email via SendGrid to {}: {}", email, e.getMessage());
             }
         } else {
-            log.info("OTP for {} (no SMTP): {}", email, otp);
+            log.info("OTP for {} (SendGrid not configured): {}", email, otp);
         }
 
         result.put("success", true);
-        result.put("message", emailSent ? "OTP sent to your email" : "OTP sent to your email");
-        // Dev fallback: return OTP when SMTP not configured
-        if (!emailSent && (smtpUser == null || smtpUser.isBlank())) {
+        result.put("message", "OTP sent to your email");
+        if (!emailSent) {
             result.put("devOtp", otp);
         }
         return result;
