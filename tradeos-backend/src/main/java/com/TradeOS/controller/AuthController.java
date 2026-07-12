@@ -69,6 +69,12 @@ public class AuthController {
     @PostMapping("/generate-token")
     public Map<String, Object> generateApiToken(HttpServletRequest request) {
         String email = (String) request.getAttribute("email");
+        if (email == null) {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                email = jwtUtil.extractEmail(authHeader.substring(7));
+            }
+        }
         String token = userService.generateApiToken(email);
         Map<String, Object> res = new HashMap<>();
         if (token == null) {
