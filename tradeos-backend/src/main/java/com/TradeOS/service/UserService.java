@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 
 @Service
@@ -169,34 +170,63 @@ public class UserService {
             return result;
         }
 
-        String token = UUID.randomUUID().toString();
-        user.setResetToken(token);
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        user.setResetToken(otp);
         user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(otpExpiryMinutes));
         userRepository.save(user);
 
-        String resetLink = frontendUrl + "/reset-password?token=" + token;
-        String body = "Click the link below to reset your TradeOS password:\n\n" +
-                      resetLink + "\n\n" +
-                      "This link expires in " + otpExpiryMinutes + " minutes.\n\n" +
+        String body = "Your TradeOS password reset OTP is: " + otp + "\n\n" +
+                      "This code expires in " + otpExpiryMinutes + " minutes.\n\n" +
                       "If you did not request this, please ignore this email.";
 
+        boolean emailSent = false;
         if (smtpUser != null && !smtpUser.isBlank()) {
             try {
                 SimpleMailMessage msg = new SimpleMailMessage();
                 msg.setTo(email);
-                msg.setSubject("TradeOS Password Reset");
+                msg.setSubject("TradeOS Password Reset OTP");
                 msg.setText(body);
                 mailSender.send(msg);
-                log.info("Reset email sent to {}", email);
+                log.info("OTP email sent to {}", email);
+                emailSent = true;
             } catch (Exception e) {
-                log.warn("Failed to send reset email to {}: {}", email, e.getMessage());
+                log.warn("Failed to send OTP email to {}: {}", email, e.getMessage());
             }
         } else {
-            log.info("Reset link for {} (no SMTP configured): {}", email, resetLink);
+            log.info("OTP for {} (no SMTP): {}", email, otp);
         }
 
         result.put("success", true);
-        result.put("message", "If this email exists, a reset link has been sent.");
+        result.put("message", emailSent ? "OTP sent to your email" : "OTP sent to your email");
+        // Dev fallback: return OTP when SMTP not configured
+        if (!emailSent && (smtpUser == null || smtpUser.isBlank())) {
+            result.put("devOtp", otp);
+        }
+        return result;
+    }
+
+    public Map<String, Object> verifyOtp(String email, String otp) {
+        Map<String, Object> result = new HashMap<>();
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            result.put("error", "User not found");
+            return result;
+        }
+        if (user.getResetToken() == null || !user.getResetToken().equals(otp)) {
+            result.put("error", "Invalid OTP");
+            return result;
+        }
+        if (user.getResetTokenExpiry() == null || LocalDateTime.now().isAfter(user.getResetTokenExpiry())) {
+            result.put("error", "OTP has expired. Request a new one.");
+            return result;
+        }
+
+        String resetToken = UUID.randomUUID().toString();
+        user.setResetToken(resetToken);
+        userRepository.save(user);
+
+        result.put("success", true);
+        result.put("resetToken", resetToken);
         return result;
     }
 
