@@ -1,92 +1,75 @@
 //+------------------------------------------------------------------+
 //|                                          MT5_TradeSync.mq5       |
-//|            Real-time trade sync from MT5 to TradeOS backend      |
+//|     Real-time bidirectional trade sync MT5 ↔ TradeOS backend    |
 //+------------------------------------------------------------------+
 #property copyright "TradeOS"
-#property version   "1.00"
-#property description "Syncs opened/modified/closed trades to TradeOS website in real-time"
+#property version   "2.00"
+#property description "Syncs trades to TradeOS + executes broker commands (close, SL/TP, BE)"
 #property strict
 
 //+------------------------------------------------------------------+
-//| Configuration - EDIT THESE                                       |
+//| Configuration                                                    |
 //+------------------------------------------------------------------+
-input string BackendURL  = "https://tradeos-backend-twuw.onrender.com/api/broker/trade-update";
-input string APIKey      = "";  // Optional: for authentication
-input string AccountID   = "";  // Leave empty to auto-detect from MT5
-input string BrokerName  = "MT5"; // Used for account mapping in Settings
-
-//+------------------------------------------------------------------+
-//| Includes                                                         |
-//+------------------------------------------------------------------+
-#include <JSON.mqh>  // Download from: https://github.com/dingmaotu/mql5-json
+input string BackendURL   = "https://tradeos-backend-twuw.onrender.com";
+input string APIKey       = "";
+input string AccountID    = "";
+input string BrokerName   = "MT5";
 
 //+------------------------------------------------------------------+
 //| Globals                                                          |
 //+------------------------------------------------------------------+
-string g_accountId = "";
-string g_lastTradeIds[];      // Track known trades to detect new ones
-string g_lastOrderTickets[];  // Track known pending orders
+string g_accountId;
+string g_tradeEndpoint;
+string g_pendingEndpoint;
+string g_ackEndpoint;
 int    g_lastTotalTrades = -1;
-int    g_lastTotalOrders = -1;
-bool   g_firstRun = true;
+string g_lastTradeIds[];
 
 //+------------------------------------------------------------------+
-//| Expert initialization function                                   |
+//| Expert initialization                                            |
 //+------------------------------------------------------------------+
 int OnInit() {
-   if (AccountID == "") {
-      g_accountId = IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN));
-   } else {
-      g_accountId = AccountID;
-   }
+   g_accountId = (AccountID == "") ? IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN)) : AccountID;
+   g_tradeEndpoint = BackendURL + "/api/broker/trade-update";
+   g_pendingEndpoint = BackendURL + "/api/broker/commands/pending?accountId=" + g_accountId;
+   g_ackEndpoint = BackendURL + "/api/broker/commands/";
 
-   // Allow WebRequest for our backend URL
-   string allowedUrls[] = {BackendURL};
-   if (!AllowWebRequest(allowedUrls)) {
-      Print("⚠ MT5_TradeSync: WebRequest not enabled! Go to Tools → Options → Expert Advisors and add: " + BackendURL);
-      return INIT_FAILED;
-   }
-
-   Print("✅ MT5_TradeSync initialized. Account: " + g_accountId);
+   Print("✅ MT5_TradeSync v2 initialized. Account: " + g_accountId);
+   Print("   Broker: " + BrokerName);
    Print("   Backend: " + BackendURL);
+   Print("➡ Ensure " + BackendURL + " is whitelisted in Tools → Options → Expert Advisors");
 
-   // Snapshot current state
    SnapshotTrades();
-   g_firstRun = false;
    return INIT_SUCCEEDED;
 }
 
 //+------------------------------------------------------------------+
-//| Expert tick function - polls every tick for changes              |
+//| OnTick - poll for changes and pending commands                   |
 //+------------------------------------------------------------------+
 void OnTick() {
    static datetime lastCheck = 0;
-   if (TimeCurrent() - lastCheck < 2) return;  // Check every 2 seconds
+   if (TimeCurrent() - lastCheck < 2) return;
    lastCheck = TimeCurrent();
 
-   SyncTrades();
+   SyncTradesToBackend();
+   PollAndExecuteCommands();
 }
 
 //+------------------------------------------------------------------+
-//| Trade event handler - fires immediately on any trade change     |
+//| OnTrade - immediate trigger on trade change                      |
 //+------------------------------------------------------------------+
 void OnTrade() {
-   SyncTrades();
+   SyncTradesToBackend();
 }
 
 //+------------------------------------------------------------------+
-//| Detect and sync trade changes                                   |
+//| Push open trades to backend                                      |
 //+------------------------------------------------------------------+
-void SyncTrades() {
-   int totalTrades = PositionsTotal();
-   int totalOrders = OrdersTotal();
+void SyncTradesToBackend() {
+   int total = PositionsTotal();
+   if (total == g_lastTotalTrades) return;
 
-   if (totalTrades == g_lastTotalTrades && totalOrders == g_lastTotalOrders && !g_firstRun) {
-      return;  // No changes
-   }
-
-   // Check for new/modified trades
-   for (int i = 0; i < totalTrades; i++) {
+   for (int i = 0; i < total; i++) {
       ulong ticket = PositionGetTicket(i);
       if (ticket > 0 && PositionSelectByTicket(ticket)) {
          string tid = IntegerToString(ticket);
@@ -97,22 +80,204 @@ void SyncTrades() {
       }
    }
 
-   // Check for closed trades (tickets no longer in positions)
    CheckForClosedTrades();
-
-   // Send pending orders
    SyncOrders();
-
-   g_lastTotalTrades = totalTrades;
-   g_lastTotalOrders = totalOrders;
+   g_lastTotalTrades = total;
 }
 
 //+------------------------------------------------------------------+
-//| Send trade data to backend                                       |
+//| Poll for pending commands and execute them                       |
+//+------------------------------------------------------------------+
+void PollAndExecuteCommands() {
+   string responseHeaders = "";
+   string responseData = "";
+
+   ResetLastError();
+   int res = WebRequest("GET", g_pendingEndpoint, "", 5000, responseData, responseHeaders);
+
+   if (res == -1) {
+      int err = GetLastError();
+      if (err != 0) Print("⚠ Poll commands WebRequest error: " + IntegerToString(err));
+      return;
+   }
+
+   if (responseData == "" || responseData == "[]") return;
+
+   // Parse JSON array manually or with JSON lib
+   // {"id":1,"accountId":"...","command":"CLOSE","ticket":"...","params":"{...}","status":"PENDING"}
+   string entries[];
+   int entryCount = ParseJSONArray(responseData, entries);
+
+   for (int e = 0; e < entryCount; e++) {
+      string cmdId     = GetJSONValue(entries[e], "\"id\"");
+      string cmdType   = GetJSONValue(entries[e], "\"command\"");
+      string cmdTicket = GetJSONValue(entries[e], "\"ticket\"");
+      string cmdParams = GetJSONValue(entries[e], "\"params\"");
+
+      if (cmdId == "") continue;
+
+      bool success = false;
+      string errorMsg = "";
+
+      if (cmdType == "CLOSE" && cmdTicket != "") {
+         success = ExecuteClose(cmdTicket, errorMsg);
+      } else if (cmdType == "MODIFY_SL" || cmdType == "MODIFY_TP" || cmdType == "MODIFY_SL_TP") {
+         double sl = StringToDouble(GetJSONValue(cmdParams, "\"sl\""));
+         double tp = StringToDouble(GetJSONValue(cmdParams, "\"tp\""));
+         success = ExecuteModifySLTP(cmdTicket, sl, tp, errorMsg);
+      } else if (cmdType == "MOVE_BE") {
+         double bePrice = StringToDouble(GetJSONValue(cmdParams, "\"sl\""));
+         success = ExecuteMoveBE(cmdTicket, bePrice, errorMsg);
+      } else if (cmdType == "PLACE_ORDER") {
+         string sym   = GetJSONValue(cmdParams, "\"symbol\"");
+         string typ   = GetJSONValue(cmdParams, "\"type\"");
+         double vol   = StringToDouble(GetJSONValue(cmdParams, "\"volume\""));
+         double price = StringToDouble(GetJSONValue(cmdParams, "\"price\""));
+         double sl    = StringToDouble(GetJSONValue(cmdParams, "\"sl\""));
+         double tp    = StringToDouble(GetJSONValue(cmdParams, "\"tp\""));
+         success = ExecutePlaceOrder(sym, typ, vol, price, sl, tp, errorMsg);
+      }
+
+      // Send ack
+      string ackPayload = "{\"status\":\"" + (success ? "DONE" : "FAILED") + "\"";
+      if (!success && errorMsg != "") ackPayload += ",\"error\":\"" + errorMsg + "\"";
+      ackPayload += "}";
+
+      string ackURL = g_ackEndpoint + cmdId + "/ack";
+      char ackData[], ackResult[];
+      StringToCharArray(ackPayload, ackData);
+      string ackHeaders = "Content-Type: application/json\r\n";
+
+      ResetLastError();
+      WebRequest("POST", ackURL, ackHeaders, 5000, ackData, ackResult, ackHeaders);
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Execute CLOSE command                                            |
+//+------------------------------------------------------------------+
+bool ExecuteClose(string ticketStr, string &error) {
+   ulong ticket = StringToInteger(ticketStr);
+   if (ticket <= 0) { error = "Invalid ticket"; return false; }
+
+   if (!PositionSelectByTicket(ticket)) { error = "Position not found"; return false; }
+
+   MqlTradeRequest req = {};
+   MqlTradeResult res = {};
+   req.action = TRADE_ACTION_DEAL;
+   req.position = ticket;
+   req.symbol = PositionGetString(POSITION_SYMBOL);
+   req.volume = PositionGetDouble(POSITION_VOLUME);
+   req.deviation = 50;
+   req.type = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY) ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
+   req.magic = (int)PositionGetInteger(POSITION_MAGIC);
+
+   ResetLastError();
+   if (!OrderSend(req, res)) {
+      error = "OrderSend failed: " + IntegerToString(GetLastError());
+      return false;
+   }
+   if (res.retcode != TRADE_RETCODE_DONE) {
+      error = "Close rejected: " + IntegerToString(res.retcode);
+      return false;
+   }
+   Print("✅ Executed CLOSE ticket=" + ticketStr);
+   return true;
+}
+
+//+------------------------------------------------------------------+
+//| Execute MODIFY SL/TP command                                     |
+//+------------------------------------------------------------------+
+bool ExecuteModifySLTP(string ticketStr, double sl, double tp, string &error) {
+   ulong ticket = StringToInteger(ticketStr);
+   if (ticket <= 0) { error = "Invalid ticket"; return false; }
+   if (!PositionSelectByTicket(ticket)) { error = "Position not found"; return false; }
+
+   MqlTradeRequest req = {};
+   MqlTradeResult res = {};
+   req.action = TRADE_ACTION_SLTP;
+   req.position = ticket;
+   req.symbol = PositionGetString(POSITION_SYMBOL);
+   req.sl = (sl > 0) ? sl : PositionGetDouble(POSITION_SL);
+   req.tp = (tp > 0) ? tp : PositionGetDouble(POSITION_TP);
+   req.magic = (int)PositionGetInteger(POSITION_MAGIC);
+
+   ResetLastError();
+   if (!OrderSend(req, res)) {
+      error = "OrderSend failed: " + IntegerToString(GetLastError());
+      return false;
+   }
+   if (res.retcode != TRADE_RETCODE_DONE) {
+      error = "Modify rejected: " + IntegerToString(res.retcode);
+      return false;
+   }
+   Print("✅ Modified SL/TP ticket=" + ticketStr + " sl=" + DoubleToString(sl) + " tp=" + DoubleToString(tp));
+   return true;
+}
+
+//+------------------------------------------------------------------+
+//| Execute MOVE_BE command                                          |
+//+------------------------------------------------------------------+
+bool ExecuteMoveBE(string ticketStr, double bePrice, string &error) {
+   ulong ticket = StringToInteger(ticketStr);
+   if (ticket <= 0) { error = "Invalid ticket"; return false; }
+   if (!PositionSelectByTicket(ticket)) { error = "Position not found"; return false; }
+
+   MqlTradeRequest req = {};
+   MqlTradeResult res = {};
+   req.action = TRADE_ACTION_SLTP;
+   req.position = ticket;
+   req.symbol = PositionGetString(POSITION_SYMBOL);
+   req.sl = bePrice;
+   req.tp = PositionGetDouble(POSITION_TP);
+   req.magic = (int)PositionGetInteger(POSITION_MAGIC);
+
+   ResetLastError();
+   if (!OrderSend(req, res)) {
+      error = "OrderSend failed: " + IntegerToString(GetLastError());
+      return false;
+   }
+   if (res.retcode != TRADE_RETCODE_DONE) {
+      error = "Move BE rejected: " + IntegerToString(res.retcode);
+      return false;
+   }
+   Print("✅ Moved to BE ticket=" + ticketStr);
+   return true;
+}
+
+//+------------------------------------------------------------------+
+//| Execute PLACE_ORDER command                                      |
+//+------------------------------------------------------------------+
+bool ExecutePlaceOrder(string symbol, string type, double volume, double price, double sl, double tp, string &error) {
+   MqlTradeRequest req = {};
+   MqlTradeResult res = {};
+   req.action = TRADE_ACTION_DEAL;
+   req.symbol = symbol;
+   req.volume = volume;
+   req.deviation = 50;
+   req.type = (type == "BUY") ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+   req.sl = (sl > 0) ? sl : 0;
+   req.tp = (tp > 0) ? tp : 0;
+   req.magic = 123456;
+
+   ResetLastError();
+   if (!OrderSend(req, res)) {
+      error = "OrderSend failed: " + IntegerToString(GetLastError());
+      return false;
+   }
+   if (res.retcode != TRADE_RETCODE_DONE) {
+      error = "Order rejected: " + IntegerToString(res.retcode);
+      return false;
+   }
+   Print("✅ Placed order " + symbol + " " + type + " vol=" + DoubleToString(volume));
+   return true;
+}
+
+//+------------------------------------------------------------------+
+//| Send trade data to backend                                        |
 //+------------------------------------------------------------------+
 void SendTradeData(ulong ticket, string status) {
    if (!PositionSelectByTicket(ticket)) return;
-
    string symbol = PositionGetString(POSITION_SYMBOL);
    double volume = PositionGetDouble(POSITION_VOLUME);
    double openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
@@ -123,96 +288,146 @@ void SendTradeData(ulong ticket, string status) {
    double swap = PositionGetDouble(POSITION_SWAP);
    double commission = PositionGetDouble(POSITION_COMMISSION);
    datetime openTime = (datetime)PositionGetInteger(POSITION_TIME);
-   long type = PositionGetInteger(POSITION_TYPE);  // 0=BUY, 1=SELL
+   long type = PositionGetInteger(POSITION_TYPE);
    string comment = PositionGetString(POSITION_COMMENT);
    ulong magic = PositionGetInteger(POSITION_MAGIC);
 
-   // Build JSON
-   CJAVal json;
-   json["ticket"] = IntegerToString(ticket);
-   json["account_id"] = g_accountId;
-   json["broker"] = BrokerName;
-   json["symbol"] = symbol;
-   json["type"] = (type == 0 ? "BUY" : "SELL");
-   json["volume"] = DoubleToString(volume, 2);
-   json["open_price"] = DoubleToString(openPrice, (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS));
-   json["current_price"] = DoubleToString(currentPrice, (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS));
-   json["stop_loss"] = (sl == 0 ? "" : DoubleToString(sl, (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS)));
-   json["take_profit"] = (tp == 0 ? "" : DoubleToString(tp, (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS)));
-   json["profit"] = DoubleToString(profit, 2);
-   json["swap"] = DoubleToString(swap, 2);
-   json["commission"] = DoubleToString(commission, 2);
-   json["open_time"] = TimeToString(openTime, TIME_DATE | TIME_SECONDS);
-   json["status"] = status;
-   json["comment"] = comment;
-   json["magic"] = IntegerToString(magic);
+   string payload = "{";
+   payload += "\"ticket\":\"" + IntegerToString(ticket) + "\",";
+   payload += "\"account_id\":\"" + g_accountId + "\",";
+   payload += "\"broker\":\"" + BrokerName + "\",";
+   payload += "\"symbol\":\"" + symbol + "\",";
+   payload += "\"type\":\"" + (type == 0 ? "BUY" : "SELL") + "\",";
+   payload += "\"volume\":\"" + DoubleToString(volume, 2) + "\",";
+   payload += "\"open_price\":\"" + DoubleToString(openPrice, (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS)) + "\",";
+   payload += "\"stop_loss\":\"" + (sl == 0 ? "" : DoubleToString(sl, (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS))) + "\",";
+   payload += "\"take_profit\":\"" + (tp == 0 ? "" : DoubleToString(tp, (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS))) + "\",";
+   payload += "\"profit\":\"" + DoubleToString(profit, 2) + "\",";
+   payload += "\"swap\":\"" + DoubleToString(swap, 2) + "\",";
+   payload += "\"commission\":\"" + DoubleToString(commission, 2) + "\",";
+   payload += "\"open_time\":\"" + TimeToString(openTime, TIME_DATE | TIME_SECONDS) + "\",";
+   payload += "\"status\":\"" + status + "\",";
+   payload += "\"comment\":\"" + comment + "\",";
+   payload += "\"magic\":\"" + IntegerToString(magic) + "\"";
+   payload += "}";
 
-   string payload = json.Serialize();
-   string response = "";
-
-   char data[];
-   char result[];
+   char data[], result[];
    StringToCharArray(payload, data);
-
    string headers = "Content-Type: application/json\r\n";
-   if (StringLen(APIKey) > 0) {
-      headers += "X-API-Key: " + APIKey + "\r\n";
-   }
+   if (StringLen(APIKey) > 0) headers += "X-API-Key: " + APIKey + "\r\n";
 
    ResetLastError();
-   int res = WebRequest("POST", BackendURL, headers, 5000, data, result, headers);
+   int res = WebRequest("POST", g_tradeEndpoint, headers, 5000, data, result, headers);
    if (res == -1) {
-      Print("⚠ WebRequest failed: " + IntegerToString(GetLastError()));
-      Print("   URL: " + BackendURL);
-   } else {
-      Print("✅ Trade synced: " + symbol + " " + (type == 0 ? "BUY" : "SELL") + " ticket=" + IntegerToString(ticket));
+      Print("⚠ Trade sync WebRequest error: " + IntegerToString(GetLastError()));
    }
 }
 
 //+------------------------------------------------------------------+
-//| Check if a trade ticket is already known                         |
+//| Helper: parse JSON array into string entries                     |
+//+------------------------------------------------------------------+
+int ParseJSONArray(string json, string &entries[]) {
+   entries = {};
+   int len = StringLen(json);
+   int depth = 0;
+   string current = "";
+   bool inString = false;
+   int count = 0;
+
+   for (int i = 0; i < len; i++) {
+      ushort c = StringGetCharacter(json, i);
+      if (c == '"' && (i == 0 || StringGetCharacter(json, i-1) != '\\')) inString = !inString;
+      if (!inString) {
+         if (c == '{') depth++;
+         if (c == '}') depth--;
+      }
+      if (!inString && depth == 0 && c == ',') {
+         if (current != "") {
+            ArrayResize(entries, count + 1);
+            entries[count] = current;
+            count++;
+         }
+         current = "";
+         continue;
+      }
+      current += ShortToString(c);
+   }
+   if (current != "") {
+      ArrayResize(entries, count + 1);
+      entries[count] = current;
+      count++;
+   }
+   return count;
+}
+
+//+------------------------------------------------------------------+
+//| Helper: extract value from JSON key                               |
+//+------------------------------------------------------------------+
+string GetJSONValue(string json, string key) {
+   int pos = StringFind(json, key);
+   if (pos < 0) return "";
+   pos += StringLen(key) + 1;
+   if (pos >= StringLen(json)) return "";
+
+   // Skip whitespace and colon
+   while (pos < StringLen(json) && (StringGetCharacter(json, pos) == ' ' || StringGetCharacter(json, pos) == ':')) pos++;
+
+   if (pos >= StringLen(json)) return "";
+
+   ushort first = StringGetCharacter(json, pos);
+   if (first == '"') {
+      pos++;
+      string result = "";
+      for (int i = pos; i < StringLen(json); i++) {
+         ushort c = StringGetCharacter(json, i);
+         if (c == '"') break;
+         if (c == '\\') { i++; if (i < StringLen(json)) result += ShortToString(StringGetCharacter(json, i)); }
+         else result += ShortToString(c);
+      }
+      return result;
+   }
+   // Number or boolean
+   string result = "";
+   for (int i = pos; i < StringLen(json); i++) {
+      ushort c = StringGetCharacter(json, i);
+      if (c == ',' || c == '}' || c == ']') break;
+      result += ShortToString(c);
+   }
+   return result;
+}
+
+//+------------------------------------------------------------------+
+//| Known trade tracking                                             |
 //+------------------------------------------------------------------+
 bool IsKnownTrade(string ticket) {
-   for (int i = 0; i < ArraySize(g_lastTradeIds); i++) {
+   for (int i = 0; i < ArraySize(g_lastTradeIds); i++)
       if (g_lastTradeIds[i] == ticket) return true;
-   }
    return false;
 }
 
-//+------------------------------------------------------------------+
-//| Add trade to known list                                          |
-//+------------------------------------------------------------------+
 void AddKnownTrade(string ticket) {
    int size = ArraySize(g_lastTradeIds);
    ArrayResize(g_lastTradeIds, size + 1);
    g_lastTradeIds[size] = ticket;
 }
 
-//+------------------------------------------------------------------+
-//| Check for closed trades (positions no longer open)               |
-//+------------------------------------------------------------------+
 void CheckForClosedTrades() {
    int totalNow = PositionsTotal();
    int knownSize = ArraySize(g_lastTradeIds);
-
-   // Get current tickets
    string currentTickets[];
    ArrayResize(currentTickets, totalNow);
    for (int i = 0; i < totalNow; i++) {
       ulong ticket = PositionGetTicket(i);
       currentTickets[i] = IntegerToString(ticket);
    }
-
-   // Find closed ones
    for (int i = knownSize - 1; i >= 0; i--) {
       bool found = false;
       for (int j = 0; j < totalNow; j++) {
          if (g_lastTradeIds[i] == currentTickets[j]) { found = true; break; }
       }
       if (!found) {
-         // Trade was closed - we can't get details, so send a close notification
-         SendCloseNotification(g_lastTradeIds[i]);
-         // Remove from known list
+         string tid = g_lastTradeIds[i];
+         SendCloseNotification(tid);
          for (int k = i; k < knownSize - 1; k++) g_lastTradeIds[k] = g_lastTradeIds[k+1];
          ArrayResize(g_lastTradeIds, knownSize - 1);
          knownSize--;
@@ -220,135 +435,42 @@ void CheckForClosedTrades() {
    }
 }
 
-//+------------------------------------------------------------------+
-//| Send close notification for a closed trade                       |
-//+------------------------------------------------------------------+
 void SendCloseNotification(string ticket) {
-   // We don't have the trade details anymore, but we can try HistorySelect
-   datetime now = TimeCurrent();
-   HistorySelect(now - 86400 * 7, now);  // Last 7 days
-
-   int total = HistoryDealsTotal();
-   for (int i = total - 1; i >= 0; i--) {
-      ulong dealTicket = HistoryDealGetTicket(i);
-      if (dealTicket > 0) {
-         string dealComment = HistoryDealGetString(dealTicket, DEAL_COMMENT);
-         if (StringFind(dealComment, ticket) >= 0 || HistoryDealGetInteger(dealTicket, DEAL_ORDER) == (ulong)StringToInteger(ticket)) {
-            // Found the closing deal
-            CJAVal json;
-            json["ticket"] = ticket;
-            json["account_id"] = g_accountId;
-            json["status"] = "CLOSED";
-            json["close_price"] = DoubleToString(HistoryDealGetDouble(dealTicket, DEAL_PRICE), 5);
-            json["profit"] = DoubleToString(HistoryDealGetDouble(dealTicket, DEAL_PROFIT), 2);
-            json["close_time"] = TimeToString((datetime)HistoryDealGetInteger(dealTicket, DEAL_TIME), TIME_DATE | TIME_SECONDS);
-
-            string payload = json.Serialize();
-            char data[], result[];
-            StringToCharArray(payload, data);
-            string headers = "Content-Type: application/json\r\n";
-
-            ResetLastError();
-            WebRequest("POST", BackendURL, headers, 5000, data, result, headers);
-            Print("✅ Close synced: ticket=" + ticket + " profit=" + DoubleToString(HistoryDealGetDouble(dealTicket, DEAL_PROFIT), 2));
-            return;
-         }
-      }
-   }
-
-   // Fallback: just send ticket as closed
-   CJAVal json;
-   json["ticket"] = ticket;
-   json["account_id"] = g_accountId;
-   json["status"] = "CLOSED";
-
-   string payload = json.Serialize();
+   string payload = "{\"ticket\":\"" + ticket + "\",\"account_id\":\"" + g_accountId + "\",\"broker\":\"" + BrokerName + "\",\"status\":\"CLOSED\"}";
    char data[], result[];
    StringToCharArray(payload, data);
    string headers = "Content-Type: application/json\r\n";
-
    ResetLastError();
-   WebRequest("POST", BackendURL, headers, 5000, data, result, headers);
-   Print("✅ Close synced (no history): ticket=" + ticket);
+   WebRequest("POST", g_tradeEndpoint, headers, 5000, data, result, headers);
 }
 
-//+------------------------------------------------------------------+
-//| Sync pending orders                                              |
-//+------------------------------------------------------------------+
 void SyncOrders() {
    int total = OrdersTotal();
    for (int i = 0; i < total; i++) {
       ulong ticket = OrderGetTicket(i);
       if (ticket > 0 && OrderSelect(ticket)) {
-         string tid = IntegerToString(ticket);
-         bool known = false;
-         for (int j = 0; j < ArraySize(g_lastOrderTickets); j++) {
-            if (g_lastOrderTickets[j] == tid) { known = true; break; }
-         }
-         if (!known) {
-            string symbol = OrderGetString(ORDER_SYMBOL);
-            double volume = OrderGetDouble(ORDER_VOLUME_CURRENT);
-            double price = OrderGetDouble(ORDER_PRICE_OPEN);
-            long type = OrderGetInteger(ORDER_TYPE);
-            datetime openTime = (datetime)OrderGetInteger(ORDER_TIME_SETUP);
-
-            CJAVal json;
-            json["ticket"] = tid;
-            json["account_id"] = g_accountId;
-            json["symbol"] = symbol;
-            json["type"] = (type == 0 ? "BUY_LIMIT" : type == 1 ? "SELL_LIMIT" : type == 2 ? "BUY_STOP" : "SELL_STOP");
-            json["volume"] = DoubleToString(volume, 2);
-            json["price"] = DoubleToString(price, (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS));
-            json["status"] = "PENDING";
-            json["open_time"] = TimeToString(openTime, TIME_DATE | TIME_SECONDS);
-
-            string payload = json.Serialize();
-            char data[], result[];
-            StringToCharArray(payload, data);
-            string headers = "Content-Type: application/json\r\n";
-
-            ResetLastError();
-            WebRequest("POST", BackendURL, headers, 5000, data, result, headers);
-            Print("📋 Order synced: " + symbol + " ticket=" + tid);
-
-            int sz = ArraySize(g_lastOrderTickets);
-            ArrayResize(g_lastOrderTickets, sz + 1);
-            g_lastOrderTickets[sz] = tid;
-         }
+         string payload = "{\"ticket\":\"" + IntegerToString(ticket) + "\",\"account_id\":\"" + g_accountId + "\",\"broker\":\"" + BrokerName + "\",\"symbol\":\"" + OrderGetString(ORDER_SYMBOL) + "\",\"type\":\"PENDING\",\"volume\":\"" + DoubleToString(OrderGetDouble(ORDER_VOLUME_CURRENT), 2) + "\",\"status\":\"PENDING\"}";
+         char data[], result[];
+         StringToCharArray(payload, data);
+         string headers = "Content-Type: application/json\r\n";
+         ResetLastError();
+         WebRequest("POST", g_tradeEndpoint, headers, 5000, data, result, headers);
       }
    }
 }
 
-//+------------------------------------------------------------------+
-//| Take initial snapshot on startup                                 |
-//+------------------------------------------------------------------+
 void SnapshotTrades() {
    int total = PositionsTotal();
    for (int i = 0; i < total; i++) {
       ulong ticket = PositionGetTicket(i);
       if (ticket > 0) {
-         string tid = IntegerToString(ticket);
-         AddKnownTrade(tid);
+         AddKnownTrade(IntegerToString(ticket));
          SendTradeData(ticket, "OPEN");
       }
    }
 }
 
-//+------------------------------------------------------------------+
-//| Allow WebRequest helper                                          |
-//+------------------------------------------------------------------+
-bool AllowWebRequest(string &urls[]) {
-   // This is a reminder - actual whitelisting must be done in MT5 UI:
-   // Tools → Options → Expert Advisors → Allow WebRequest for
-   Print("➡ Please ensure this URL is whitelisted in MT5:");
-   Print("   " + BackendURL);
-   return true;
-}
-
-//+------------------------------------------------------------------+
-//| Expert deinitialization function                                 |
-//+------------------------------------------------------------------+
 void OnDeinit(const int reason) {
-   Print("🛑 MT5_TradeSync stopped.");
+   Print("MT5_TradeSync stopped.");
 }
 //+------------------------------------------------------------------+

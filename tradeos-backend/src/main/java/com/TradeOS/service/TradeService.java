@@ -4,7 +4,10 @@ import com.TradeOS.dto.CloseTradeRequest;
 import com.TradeOS.dto.TradeRequest;
 import com.TradeOS.dto.UpdateTradeRequest;
 import com.TradeOS.entity.Trade;
+import com.TradeOS.entity.TradingAccount;
+import com.TradeOS.repository.BrokerCommandRepository;
 import com.TradeOS.repository.TradeRepository;
+import com.TradeOS.repository.TradingAccountRepository;
 import com.opencsv.CSVWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,6 +23,12 @@ public class TradeService {
 
     @Autowired
     private TradeRepository tradeRepository;
+
+    @Autowired
+    private TradingAccountRepository tradingAccountRepository;
+
+    @Autowired
+    private BrokerCommandService brokerCommandService;
 
     public List<Trade> getUserTrades(String email) {
 
@@ -177,49 +186,46 @@ public class TradeService {
             CloseTradeRequest request,
             String email
     ) {
+        Trade trade = tradeRepository.findByIdAndUserEmail(tradeId, email);
+        if (trade == null) return "Trade Not Found";
 
-        Trade trade =
-                tradeRepository.findByIdAndUserEmail(
-                        tradeId,
-                        email
-                );
-
-        if (trade == null) {
-            return "Trade Not Found";
+        // Route MT5/MT4 trades through broker command queue
+        if (trade.getMt5Ticket() != null && trade.getMt5AccountId() != null) {
+            TradingAccount brokerAcc = tradingAccountRepository.findByBrokerAndApiKey(
+                trade.getMt5AccountId().matches("\\d+") ? findBrokerForTrade(trade) : trade.getMt5AccountId(),
+                trade.getMt5AccountId()
+            );
+            String broker = brokerAcc != null ? brokerAcc.getBroker() : "MT5";
+            brokerCommandService.createCloseCommand(trade, broker, trade.getMt5AccountId());
+            trade.setStatus("CLOSING");
+            trade.setExitPrice(request.getExitPrice() != null ? request.getExitPrice() : 0);
+            tradeRepository.save(trade);
+            return "Close queued to broker";
         }
 
-        if (request.getExitPrice() == null) {
-            return "Exit price is required";
-        }
+        if (request.getExitPrice() == null) return "Exit price is required";
 
         trade.setExitPrice(request.getExitPrice());
-
         double pnl;
-
         if (trade.getTradeType().equals("BUY")) {
-
-            pnl =
-                    (trade.getExitPrice()
-                            - trade.getEntryPrice())
-
-                            * trade.getPositionSize();
-
+            pnl = (trade.getExitPrice() - trade.getEntryPrice()) * trade.getPositionSize();
         } else {
-
-            pnl =
-                    (trade.getEntryPrice()
-                            - trade.getExitPrice())
-
-                            * trade.getPositionSize();
+            pnl = (trade.getEntryPrice() - trade.getExitPrice()) * trade.getPositionSize();
         }
-
         trade.setPnl(pnl);
-
         trade.setStatus("CLOSED");
-
         tradeRepository.save(trade);
-
         return "Trade Closed Successfully";
+    }
+
+    private String findBrokerForTrade(Trade trade) {
+        List<TradingAccount> accounts = tradingAccountRepository.findByUserEmail(trade.getUserEmail());
+        for (TradingAccount acc : accounts) {
+            if (acc.getApiKey() != null && acc.getApiKey().equals(trade.getMt5AccountId())) {
+                return acc.getBroker();
+            }
+        }
+        return "MT5";
     }
 
     public String moveToBreakeven(
@@ -229,6 +235,13 @@ public class TradeService {
         Trade trade = tradeRepository.findByIdAndUserEmail(tradeId, email);
         if (trade == null) return "Trade Not Found";
         if (!"OPEN".equals(trade.getStatus())) return "Trade is not open";
+
+        if (trade.getMt5Ticket() != null && trade.getMt5AccountId() != null) {
+            brokerCommandService.createMoveToBeCommand(trade, findBrokerForTrade(trade), trade.getMt5AccountId());
+            trade.setStatus("be_queued");
+            tradeRepository.save(trade);
+            return "Breakeven queued to broker";
+        }
 
         trade.setStopLoss(trade.getEntryPrice());
         trade.setStatus("be_touched");
@@ -266,6 +279,14 @@ public class TradeService {
     ) {
         Trade trade = tradeRepository.findByIdAndUserEmail(tradeId, email);
         if (trade == null) return "Trade Not Found";
+
+        if (trade.getMt5Ticket() != null && trade.getMt5AccountId() != null) {
+            brokerCommandService.createSlTpCommand(trade, stopLoss, takeProfit, findBrokerForTrade(trade), trade.getMt5AccountId());
+            if (stopLoss != null) trade.setStopLoss(stopLoss);
+            if (takeProfit != null) trade.setTakeProfit(takeProfit);
+            tradeRepository.save(trade);
+            return "SL/TP update queued to broker";
+        }
 
         if (stopLoss != null) trade.setStopLoss(stopLoss);
         if (takeProfit != null) trade.setTakeProfit(takeProfit);
